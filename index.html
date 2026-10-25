@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>بدن‌نامه | اطلس سه‌بعدی آناتومی بدن انسان</title>
+<meta name="description" content="اطلس تعاملی و سه‌بعدی آناتومی بدن انسان به فارسی — مدل واقعی BodyParts3D با ۲۲۳۴ ساختار قابل کاوش، جزئیات هر عضو و آزمون">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%232dd4bf' d='M16 27S4 19 4 11.5C4 7 7.5 4 11.5 4c2 0 3.6 1 4.5 2.5C16.9 5 18.5 4 20.5 4 24.5 4 28 7 28 11.5 28 19 16 27 16 27z'/%3E%3Ccircle cx='22' cy='6' r='3' fill='%2338bdf8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css?v=3">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#/">
+      <span class="brand-mark">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path fill="url(#bg1)" d="M16 27S4 19 4 11.5C4 7 7.5 4 11.5 4c2 0 3.6 1 4.5 2.5C16.9 5 18.5 4 20.5 4 24.5 4 28 7 28 11.5 28 19 16 27 16 27z"/>
+          <circle cx="22.5" cy="6.5" r="3.2" fill="var(--acc-2)"/>
+          <defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2dd4bf"/><stop offset="1" stop-color="#38bdf8"/>
+          </linearGradient></defs>
+        </svg>
+      </span>
+      بدن‌نامه <small>اطلس سه‌بعدی آناتومی</small>
+    </a>
+    <nav class="nav" id="main-nav">
+      <a href="#/" data-route="">خانه</a>
+      <a href="#/body" data-route="body">بدن سه‌بعدی</a>
+      <a href="#/brain" data-route="brain">مغز</a>
+      <a href="#/systems" data-route="systems">دستگاه‌ها</a>
+      <a href="#/quiz" data-route="quiz">آزمون</a>
+    </nav>
+    <div class="top-actions">
+      <button class="search-pill" id="open-search" aria-label="جستجو در ساختارهای بدن">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span>جستجو…</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+      <button class="icon-btn" id="theme-toggle" aria-label="تغییر پوسته روشن/تاریک" title="تغییر پوسته">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+      </button>
+      <button class="icon-btn menu-btn" id="menu-toggle" aria-label="منو">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="app" class="page"></main>
+
+<div id="modal-root"></div>
+<div id="search-root"></div>
+
+<footer>
+  <div class="container">
+    <div>بدن‌نامه — اطلس تعاملی آناتومی بدن انسان · ساخته‌شده با ❤ برای یادگیری</div>
+    <div class="en" style="font-size:11px">3D: BodyParts3D © DBCLS · CC-BY 4.0 · Font: Vazirmatn</div>
+  </div>
+</footer>
+
+<script src="js/data-systems-1.js"></script>
+<script src="js/data-systems-2.js"></script>
+<script src="js/data-brain.js"></script>
+<script src="js/data-fa-names.js"></script>
+<script src="js/data-female.js"></script>
+<script src="js/data-quiz.js"></script>
+<script src="js/svg-body.js"></script>
+<script src="js/svg-organs.js"></script>
+<script src="js/svg-brain.js"></script>
+<script src="js/app.js?v=4"></script>
+<script type="module" src="js/v3d.js?v=4"></script>
+</body>
+</html>
