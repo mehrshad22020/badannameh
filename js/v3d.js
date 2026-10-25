@@ -42,6 +42,11 @@ window.Body3D = {
     });
     const centers = parts.map(p => new THREE.Vector3().fromArray(p.bounds[0]).add(new THREE.Vector3().fromArray(p.bounds[1])).multiplyScalar(.5));
     const bounds = parts.map(p => new THREE.Box3(new THREE.Vector3().fromArray(p.bounds[0]), new THREE.Vector3().fromArray(p.bounds[1])));
+    /* قطعات ریز — کاندید مارکر (چون در دید عادی دیده نمی‌شوند) */
+    const smallPart = parts.map(p => {
+      const s = p.bounds[1].map((v, k) => v - p.bounds[0][k]);
+      return Math.max(s[0], s[1], s[2]) < .12;
+    });
 
     /* ---------- رندرر ---------- */
     let renderer;
@@ -74,25 +79,38 @@ window.Body3D = {
     scene.environment = pmrem.fromScene(room, .04).texture;
     room.dispose(); pmrem.dispose();
 
-    scene.add(new THREE.HemisphereLight(0xbfd9ff, 0x0a0f16, .85));
-    const key = new THREE.DirectionalLight(0xfff2e0, 2.0); key.position.set(-2, 4, 3); scene.add(key);
-    const rim = new THREE.DirectionalLight(0x8fd4ff, 1.7); rim.position.set(2.4, 2, -3); scene.add(rim);
-    const fill = new THREE.DirectionalLight(0xff9a8a, .45); fill.position.set(0, -2.4, -1.5); scene.add(fill);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xaebfd4, 1.0));
+    const key = new THREE.DirectionalLight(0xfff6e8, 1.8); key.position.set(-2, 4, 3); scene.add(key);
+    const rim = new THREE.DirectionalLight(0xdfeaff, 1.3); rim.position.set(2.4, 2, -3); scene.add(rim);
+    const fill = new THREE.DirectionalLight(0xffe8dd, .3); fill.position.set(0, -2.4, -1.5); scene.add(fill);
 
     /* زمین: دیسک درخشان و حلقه امضا */
     const glowTex = (() => {
       const c = document.createElement('canvas'); c.width = c.height = 256;
       const g = c.getContext('2d').createRadialGradient(128,128,0,128,128,128);
-      g.addColorStop(0,'rgba(45,212,191,.32)'); g.addColorStop(.5,'rgba(45,212,191,.08)'); g.addColorStop(1,'rgba(45,212,191,0)');
+      g.addColorStop(0,'rgba(29,78,216,.22)'); g.addColorStop(.5,'rgba(29,78,216,.06)'); g.addColorStop(1,'rgba(29,78,216,0)');
       const ctx = c.getContext('2d'); ctx.fillStyle = g; ctx.fillRect(0,0,256,256);
       const t = new THREE.CanvasTexture(c); return t;
     })();
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4), new THREE.MeshBasicMaterial({ map:glowTex, transparent:true, depthWrite:false }));
     glow.rotation.x = -Math.PI/2; glow.position.y = -.03; scene.add(glow);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(.72, .735, 128), new THREE.MeshBasicMaterial({ color:0x2dd4bf, transparent:true, opacity:.38, side:THREE.DoubleSide }));
+    const ring = new THREE.Mesh(new THREE.RingGeometry(.72, .735, 128), new THREE.MeshBasicMaterial({ color:0x1D4ED8, transparent:true, opacity:.32, side:THREE.DoubleSide }));
     ring.rotation.x = -Math.PI/2; ring.position.y = -.012; scene.add(ring);
-    const ring2 = new THREE.Mesh(new THREE.RingGeometry(.60, .604, 128), new THREE.MeshBasicMaterial({ color:0x38bdf8, transparent:true, opacity:.16, side:THREE.DoubleSide }));
+    const ring2 = new THREE.Mesh(new THREE.RingGeometry(.60, .604, 128), new THREE.MeshBasicMaterial({ color:0x93b4f5, transparent:true, opacity:.16, side:THREE.DoubleSide }));
     ring2.rotation.x = -Math.PI/2; ring2.position.y = -.012; scene.add(ring2);
+
+    /* مارکرها — راهنمای یافتن قطعات ریز */
+    const markerPositions = new Float32Array(parts.length * 3);
+    const markerGeometry = new THREE.BufferGeometry();
+    markerGeometry.setAttribute('position', new THREE.BufferAttribute(markerPositions, 3));
+    const markerMaterial = new THREE.PointsMaterial({ color:0x1D4ED8, size:6, sizeAttenuation:false, transparent:true, opacity:.55, depthTest:false });
+    markerMaterial.onBeforeCompile = shader => {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <clipping_planes_fragment>',
+        '#include <clipping_planes_fragment>\nif (distance(gl_PointCoord, vec2(0.5)) > 0.5) discard;');
+    };
+    const markers = new THREE.Points(markerGeometry, markerMaterial);
+    markers.frustumCulled = false; markers.renderOrder = 10; markers.visible = false;
+    scene.add(markers);
 
     /* ---------- متریال با وضعیت GPU برای هر part ---------- */
     const materials = [];
@@ -113,7 +131,7 @@ window.Body3D = {
         shader.fragmentShader = shader.fragmentShader.replace('#include <clipping_planes_fragment>',
           '#include <clipping_planes_fragment>\nif (partVisible < 0.5) discard;');
         shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>',
-          '#include <color_fragment>\nfloat selAmt = partSelected * mix(1.0, 0.12, uIsolate);\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.05, 0.72, 0.63), selAmt);\nfloat rimGlow = pow(1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))), 2.5);\ndiffuseColor.rgb += vec3(0.02,0.30,0.26) * rimGlow * selAmt;\n#ifdef USE_EMISSIVEMAP\n#else\ntotalEmissiveRadiance += vec3(0.0,0.35,0.30) * selAmt * 0.35;\n#endif');
+          '#include <color_fragment>\nfloat selAmt = partSelected * mix(1.0, 0.12, uIsolate);\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.11, 0.30, 0.85), selAmt);\nfloat rimGlow = pow(1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))), 2.5);\ndiffuseColor.rgb += vec3(0.10,0.28,0.85) * rimGlow * selAmt * 0.5;\n#ifdef USE_EMISSIVEMAP\n#else\ntotalEmissiveRadiance += vec3(0.05,0.15,0.45) * selAmt * 0.3;\n#endif');
         m.userData.shader = shader;
       };
       materials.push(m);
@@ -125,6 +143,7 @@ window.Body3D = {
     /* ---------- بارگذاری chunkها ---------- */
     const geometries = [];
     const pickers = []; /* مش نامرئی تک‌قطعه‌ای برای picking دقیق و سریع */
+    const sysMeshes = new Map(); /* مش ادغام‌شده هر دستگاه — برای خاموش‌کردن کامل دستگاه‌های پنهان (بهینه‌سازی) */
     let loaded = 0, disposed = false;
     const loadChunk = async ci => {
       const chunk = atlas.chunks[ci];
@@ -159,6 +178,7 @@ window.Body3D = {
         const mesh = new THREE.Mesh(merged, mats.get(system));
         mesh.frustumCulled = false;
         mesh.userData.system = system;
+        sysMeshes.set(system, mesh);
         scene.add(mesh);
       });
       loaded++;
@@ -213,11 +233,17 @@ window.Body3D = {
         state.set([dx, dy, dz, vis ? 1 : 0], i * 4);
         selTex[i*4] = sel.has(p.id) ? 255 : 0;
         selTex[i*4+1] = selTex[i*4+2] = selTex[i*4+3] = 0;
+        markerPositions.set(vis && smallPart[i] ? [c.x + dx, c.y + dy, c.z + dz] : [1e6, 1e6, 1e6], i * 3);
         const pk = pickers[i];
         if (pk){ pk.position.set(dx, dy, dz); pk.updateMatrix(); pk.updateMatrixWorld(true); }
       });
       partTexture.needsUpdate = true;
       selectionTexture.needsUpdate = true;
+      markerGeometry.attributes.position.needsUpdate = true;
+      /* بهینه‌سازی: دستگاهی که همه قطعاتش پنهان است، کلاً رندر نشود */
+      const sysAny = {};
+      for (let i = 0; i < parts.length; i++){ if (state[i*4+3] > .5){ sysAny[parts[i].system] = true; } }
+      sysMeshes.forEach((mesh, sys) => { mesh.visible = !!sysAny[sys]; });
       materials.forEach(m => { if (m.userData.shader) m.userData.shader.uniforms.uIsolate.value = inst.isolate ? 1 : 0; });
       dirty = true;
       if (inst.onStateChange) inst.onStateChange();
@@ -423,7 +449,9 @@ window.Body3D = {
       applyState();
     };
     inst.isArrange = () => !!inst._arrange;
-    window.__debugPick = (cx, cy) => ({ hit: pickAt(cx, cy), name: pickAt(cx,cy) >= 0 ? parts[pickAt(cx,cy)].name : null });
+    inst.setMarkers = on => { markers.visible = !!on; dirty = true; };
+    inst.isMarkers = () => markers.visible;
+    window.__zoomProbe = () => ({ dist: +camera.position.distanceTo(controls.target).toFixed(3), min: controls.minDistance, max: +controls.maxDistance.toFixed(1), zoomEnabled: controls.enableZoom, panLeft: controls.mouseButtons.LEFT });
     inst.dispose = () => {
       disposed = true;
       ro.disconnect();
@@ -432,6 +460,7 @@ window.Body3D = {
       geometries.forEach(g => g.dispose());
       materials.forEach(m => m.dispose());
       partTexture.dispose(); selectionTexture.dispose(); glowTex.dispose();
+      markerGeometry.dispose(); markerMaterial.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };

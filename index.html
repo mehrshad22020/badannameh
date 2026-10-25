@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl" data-theme="dark">
+<html lang="fa" dir="rtl" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>بدن‌نامه | اطلس سه‌بعدی آناتومی بدن انسان</title>
-<meta name="description" content="اطلس تعاملی و سه‌بعدی آناتومی بدن انسان به فارسی — مدل واقعی BodyParts3D با ۲۲۳۴ ساختار قابل کاوش، جزئیات هر عضو و آزمون">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%232dd4bf' d='M16 27S4 19 4 11.5C4 7 7.5 4 11.5 4c2 0 3.6 1 4.5 2.5C16.9 5 18.5 4 20.5 4 24.5 4 28 7 28 11.5 28 19 16 27 16 27z'/%3E%3Ccircle cx='22' cy='6' r='3' fill='%2338bdf8'/%3E%3C/svg%3E">
+<title>بدن‌نامه | اطلس سه‌بعدی آناتومی بدن انسان — تقدیم به گلسا</title>
+<meta name="description" content="اطلس تعاملی و سه‌بعدی آناتومی بدن انسان به فارسی — مدل واقعی BodyParts3D با ۲۲۳۴ ساختار قابل کاوش، کاوشگر مغز، جزئیات هر عضو و آزمون. تقدیم به گلسا، از مهرشاد.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%231D4ED8' d='M16 27S4 19 4 11.5C4 7 7.5 4 11.5 4c2 0 3.6 1 4.5 2.5C16.9 5 18.5 4 20.5 4 24.5 4 28 7 28 11.5 28 19 16 27 16 27z'/%3E%3Ccircle cx='22' cy='6' r='3' fill='%23F59E0B'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lalezar&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css?v=6">
 <script type="importmap">
 {
   "imports": {
@@ -27,9 +27,9 @@
       <span class="brand-mark">
         <svg viewBox="0 0 32 32" aria-hidden="true">
           <path fill="url(#bg1)" d="M16 27S4 19 4 11.5C4 7 7.5 4 11.5 4c2 0 3.6 1 4.5 2.5C16.9 5 18.5 4 20.5 4 24.5 4 28 7 28 11.5 28 19 16 27 16 27z"/>
-          <circle cx="22.5" cy="6.5" r="3.2" fill="var(--acc-2)"/>
+          <circle cx="22.5" cy="6.5" r="3.2" fill="#F59E0B"/>
           <defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#2dd4bf"/><stop offset="1" stop-color="#38bdf8"/>
+            <stop offset="0" stop-color="#1D4ED8"/><stop offset="1" stop-color="#7AA5F8"/>
           </linearGradient></defs>
         </svg>
       </span>
@@ -48,9 +48,6 @@
         <span>جستجو…</span>
         <kbd>Ctrl K</kbd>
       </button>
-      <button class="icon-btn" id="theme-toggle" aria-label="تغییر پوسته روشن/تاریک" title="تغییر پوسته">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
-      </button>
       <button class="icon-btn menu-btn" id="menu-toggle" aria-label="منو">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
@@ -65,8 +62,9 @@
 
 <footer>
   <div class="container">
-    <div>بدن‌نامه — اطلس تعاملی آناتومی بدن انسان · ساخته‌شده با ❤ برای یادگیری</div>
-    <div class="en" style="font-size:11px">3D: BodyParts3D © DBCLS · CC-BY 4.0 · Font: Vazirmatn</div>
+    <div>بدن‌نامه — اطلس تعاملی آناتومی بدن انسان</div>
+    <div>ساخته‌شده با <b style="color:var(--amber-dark)">❤</b> توسط <b>مهرشاد</b> · تقدیم به <b style="color:var(--amber-dark)">گلسا</b> 🌷</div>
+    <div class="en" style="font-size:11px">3D: BodyParts3D © DBCLS · CC-BY 4.0 · github.com/mehrshad22020/badannameh</div>
   </div>
 </footer>
 
@@ -79,7 +77,7 @@
 <script src="js/svg-body.js"></script>
 <script src="js/svg-organs.js"></script>
 <script src="js/svg-brain.js"></script>
-<script src="js/app.js?v=4"></script>
-<script type="module" src="js/v3d.js?v=5"></script>
+<script src="js/app.js?v=6"></script>
+<script type="module" src="js/v3d.js?v=6"></script>
 </body>
 </html>

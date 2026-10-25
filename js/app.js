@@ -26,6 +26,28 @@ const ATLAS_SYS = [
 ];
 const ATLAS_SYS_FA = Object.fromEntries(ATLAS_SYS);
 
+/* ---------- آیکون‌های خطی (جای ایموجی — سبک درود) ---------- */
+const ICON = {
+  skeletal:'<path d="M17 10c.7-.7 1.7 0 2.5 0a2.5 2.5 0 1 0 0-5 .5.5 0 0 1-.5-.5 2.5 2.5 0 1 0-5 0c0 .8.7 1.8 0 2.5l-7 7c-.7.7-1.7 0-2.5 0a2.5 2.5 0 1 0 0 5c.3 0 .5.2.5.5a2.5 2.5 0 1 0 5 0c0-.8-.7-1.8 0-2.5Z"/>',
+  muscular:'<path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/>',
+  nervous:'<circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M4.2 4.2l5 5M14.8 14.8l5 5M19.8 4.2l-5 5M9.2 14.8l-5 5"/>',
+  cardio:'<path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/>',
+  respiratory:'<path d="M12 3v8"/><path d="M9 11c0-2-1.5-3-3-3s-3 2-3 4.5C3 17 6 21 9 21c1.6 0 3-1.2 3-3"/><path d="M15 11c0-2 1.5-3 3-3s3 2 3 4.5C21 17 18 21 15 21c-1.6 0-3-1.2-3-3"/>',
+  digestive:'<path d="M10 3v4c0 3-4 4-4 8a6 6 0 0 0 12 0c0-2-1-3.2-2.2-4.2"/><path d="M9.5 3h4"/>',
+  urinary:'<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+  endocrine:'<path d="M10 2v7.5a2 2 0 0 1-.2.9L4.7 20.5a1 1 0 0 0 .9 1.5h12.8a1 1 0 0 0 .9-1.5L14.2 10.4a2 2 0 0 1-.2-.9V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/>',
+  lymphatic:'<path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/>',
+  sensory:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  reproductive:'<circle cx="12" cy="9" r="5"/><path d="M12 14v7M9 18h6"/>',
+  brain:'<path d="M9.5 3A2.5 2.5 0 0 1 12 5.5v13a2.5 2.5 0 0 1-4.96.44A2.5 2.5 0 0 1 4.5 16 2.5 2.5 0 0 1 3 12a2.5 2.5 0 0 1 1.5-4.58A2.5 2.5 0 0 1 9.5 3Z"/><path d="M14.5 3A2.5 2.5 0 0 0 12 5.5v13a2.5 2.5 0 0 0 4.96.44A2.5 2.5 0 0 0 19.5 16a2.5 2.5 0 0 0 1.5-4 2.5 2.5 0 0 0-1.5-4.58A2.5 2.5 0 0 0 14.5 3Z"/>',
+  cube:'<path d="M21 8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>',
+  target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  book:'<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
+  clipboard:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  markers:'<circle cx="12" cy="12" r="2"/><circle cx="5" cy="17" r="2"/><circle cx="19" cy="17" r="2"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="7" r="2"/><path d="M12 14v-4M6.5 15.5 10 13.5M17.5 15.5 14 13.5M6.5 8.5 10 10.5M17.5 8.5 14 10.5"/>'
+};
+const icon = id => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[id]||ICON.target}</svg>`;
+
 /* نام فارسی ساختار آتلاس */
 function faStructName(name, asHtml){
   const base = (name||'').replace(/^(Left|Right)\s+/i,'').trim();
@@ -148,7 +170,7 @@ function ensure3D(cb){
 
 const loaderHtml = () => `
   <div class="gl3d-loader">
-    <svg class="beat" viewBox="0 0 32 32"><path fill="#2dd4bf" d="M16 27S4 19 4 11.5C4 7 7.5 4 11.5 4c2 0 3.6 1 4.5 2.5C16.9 5 18.5 4 20.5 4 24.5 4 28 7 28 11.5 28 19 16 27 16 27z"/></svg>
+    <svg class="beat" viewBox="0 0 32 32"><path fill="#1D4ED8" d="M16 27S4 19 4 11.5C4 7 7.5 4 11.5 4c2 0 3.6 1 4.5 2.5C16.9 5 18.5 4 20.5 4 24.5 4 28 7 28 11.5 28 19 16 27 16 27z"/></svg>
     <div>در حال باز کردن مدل واقعی بدن انسان…</div>
     <div class="bar"><i></i></div>
     <div class="pct small muted">۰٪</div>
@@ -188,12 +210,13 @@ function build3DStage(host, { brainOnly, onReset } = {}){
       <button class="hud-pill" id="hud-pan" title="با فعال‌سازی، کشیدن با دکمه چپ موس = جابه‌جایی صحنه">✥ جابه‌جایی</button>
       <button class="hud-pill" id="hud-zout" title="کوچک‌نمایی">－</button>
       <button class="hud-pill" id="hud-zin" title="بزرگ‌نمایی">＋</button>
-      <button class="hud-pill" id="hud-isolate">🎯 جداسازی انتخاب‌شده</button>
-      <button class="hud-pill" id="hud-arrange" title="اجزا کنار هم و مرتب چیده می‌شوند">🧩 چیدمان اجزا</button>
-      <label class="hud-pill" style="gap:10px">💥 انفجار لایه‌ها
+      <button class="hud-pill" id="hud-isolate">جداسازی انتخاب‌شده</button>
+      <button class="hud-pill" id="hud-arrange" title="اجزا کنار هم و مرتب چیده می‌شوند">چیدمان اجزا</button>
+      <button class="hud-pill" id="hud-markers" title="نقطه‌های راهنما برای یافتن قطعات ریز">مارکرها</button>
+      <label class="hud-pill" style="gap:10px">انفجار لایه‌ها
         <input type="range" id="hud-explode" min="0" max="100" value="0" style="accent-color:var(--acc);width:110px">
       </label>
-      <span class="hud-note">کلیک = انتخاب · کشیدن = چرخش · راست‌کلیک-کشیدن = جابه‌جایی · چرخ موس = زوم</span>
+      <span class="hud-note">کلیک = انتخاب · چرخ موس = زوم · راست‌کلیک-کشیدن = جابه‌جایی</span>
     </div>`;
   const ld = bindLoader(host);
   ensure3D(err => {
@@ -268,6 +291,11 @@ function build3DStage(host, { brainOnly, onReset } = {}){
         if (!active3D) return;
         e.currentTarget.classList.toggle('on');
         active3D.setArrange(e.currentTarget.classList.contains('on'));
+      });
+      $('#hud-markers', host).addEventListener('click', e => {
+        if (!active3D) return;
+        e.currentTarget.classList.toggle('on');
+        active3D.setMarkers(e.currentTarget.classList.contains('on'));
       });
       $('#hud-isolate', host).addEventListener('click', e => {
         if (!active3D) return;
@@ -507,10 +535,11 @@ function pageHome(){
           <span class="eyebrow"><span class="dot-live"></span>مدل واقعی BodyParts3D · ۲۲۳۴ ساختار آناتومیک</span>
           <h1>بدن‌نامه</h1>
           <p class="lede">بدن انسان را <b>لایه‌به‌لایه، سه‌بعدی و از هر جهت</b> کاوش کن — هر عضو واقعی را بردار و جدا بررسی کن، شرح فارسی هر ساختار را بخوان و با آزمون محک بزن.</p>
-          <div class="hero-cta">
-            <a class="btn" href="#/body">🧬 کاوش سه‌بعدی بدن</a>
-            <a class="btn ghost" href="#/brain">🧠 کاوشگر مغز</a>
-          </div>
+    <div class="hero-cta">
+      <a class="btn" href="#/body">کاوش سه‌بعدی بدن</a>
+      <a class="btn ghost" href="#/brain">کاوشگر مغز</a>
+    </div>
+    <span class="dedication">با ❤ ساخته‌شده توسط <b>مهرشاد</b> — تقدیم به <b>گلسا</b> 🌷</span>
           <div class="stats">
             <div class="stat"><b>۲۲۳۴</b><span>مش سه‌بعدی واقعی</span></div>
             <div class="stat"><b>${fa(SYSTEMS.length)}</b><span>دستگاه بدن</span></div>
@@ -526,14 +555,22 @@ function pageHome(){
 
     <div class="section-head"><h2>چه چیزی در انتظار توست</h2></div>
     <div class="grid cols-4">
-      <div class="card reveal"><div class="feat"><div class="f-ic">🧬</div><div><h4>مدل واقعی سه‌بعدی</h4><p>آناتومی مرجع BodyParts3D — نه نقاشی کارتونی؛ هر رگ، هر استخوان و هر عصب جدا و قابل انتخاب.</p></div></div></div>
-      <div class="card reveal"><div class="feat"><div class="f-ic">🎯</div><div><h4>جداسازی و انفجار</h4><p>ساختار انتخابی را از بقیه جدا کن و با اسلایدر انفجار، لایه‌های بدن را از هم باز کن.</p></div></div></div>
-      <div class="card reveal"><div class="feat"><div class="f-ic">📖</div><div><h4>شرح فارسی عمیق</h4><p>زیربخش‌ها، نکات کلیدی و نگاه بالینی به زبان فارسی روان برای هر اندام.</p></div></div></div>
-      <div class="card reveal"><div class="feat"><div class="f-ic">📝</div><div><h4>آزمون هوشمند</h4><p>۷۵ سوال دسته‌بندی‌شده با توضیح پاسخ و ثبت بهترین رکورد.</p></div></div></div>
+      <div class="card reveal"><div class="feat"><div class="f-ic">${icon('cube')}</div><div><h4>مدل واقعی سه‌بعدی</h4><p>آناتومی مرجع BodyParts3D — نه نقاشی کارتونی؛ هر رگ، هر استخوان و هر عصب جدا و قابل انتخاب.</p></div></div></div>
+      <div class="card reveal"><div class="feat"><div class="f-ic amber">${icon('target')}</div><div><h4>جداسازی و چیدمان</h4><p>ساختار انتخابی را جدا کن، با اسلایدر انفجار لایه‌ها را باز کن و با «چیدمان اجزا» همه را مرتب کنار هم ببین.</p></div></div></div>
+      <div class="card reveal"><div class="feat"><div class="f-ic">${icon('book')}</div><div><h4>شرح فارسی عمیق</h4><p>زیربخش‌ها، نکات کلیدی و نگاه بالینی به زبان فارسی روان برای هر اندام.</p></div></div></div>
+      <div class="card reveal"><div class="feat"><div class="f-ic amber">${icon('clipboard')}</div><div><h4>آزمون هوشمند</h4><p>۷۵ سوال دسته‌بندی‌شده با توضیح پاسخ و ثبت بهترین رکورد.</p></div></div></div>
     </div>
 
     <div class="section-head"><h2>۱۱ دستگاه بدن</h2><span class="muted">روی هر دستگاه کلیک کن</span></div>
     <div class="grid cols-4" id="home-systems"></div>
+
+    <div class="dedication-band reveal" style="margin-top:44px">
+      <div>
+        <h3>تقدیم به گلسا 🌷</h3>
+        <p>این اطلس با عشق ساخته شده تا یادگیری آناتومی به زبان فارسی، آسان و زیبا باشد — امید که هر کلیک، یک کشف تازه باشد.</p>
+      </div>
+      <div class="heart">❤</div>
+    </div>
   </div>`;
   $('#home-systems').innerHTML = SYSTEMS.map(sys => `
     <a class="card hoverable reveal" href="#/systems/${sys.id}" style="--sc:${sys.color}">
@@ -568,7 +605,7 @@ function pageHome(){
 function systemCard(sys){
   return `<a class="card hoverable reveal" href="#/systems/${sys.id}" style="--sc:${sys.color}">
     <span class="count">${fa(sys.organs.length)} عضو</span>
-    <span class="sys-icon">${sys.icon}</span>
+    <span class="sys-icon" style="background:color-mix(in srgb, ${sys.color} 12%, #fff);color:${sys.color};border-color:color-mix(in srgb, ${sys.color} 35%, #fff)">${icon(sys.id)}</span>
     <h3>${sys.name}</h3>
     <span class="en">${sys.en}</span><p>${sys.short}</p></a>`;
 }
@@ -589,7 +626,7 @@ function pageSystem(id){
   app.innerHTML = `<div class="container">
     <a class="small muted" href="#/systems">← همه دستگاه‌ها</a>
     <div class="section-head" style="margin-top:8px">
-      <h2><span class="sys-icon" style="--sc:${sys.color};display:inline-grid;width:44px;height:44px;vertical-align:middle;margin-inline-end:10px">${sys.icon}</span> ${sys.name}</h2>
+      <h2><span class="sys-icon" style="--sc:${sys.color};display:inline-grid;width:46px;height:46px;vertical-align:middle;margin-inline-end:10px;background:color-mix(in srgb, ${sys.color} 12%, #fff);color:${sys.color};border-color:color-mix(in srgb, ${sys.color} 35%, #fff)">${icon(sys.id)}</span> ${sys.name}</h2>
       <span class="en muted">${sys.en}</span>
     </div>
     <p class="muted" style="max-width:78ch">${sys.overview}</p>
@@ -760,7 +797,7 @@ function pageBrain(){
   const partIds = Object.keys(BRAIN.parts);
   app.innerHTML = `<div class="container">
     <span class="eyebrow" style="margin-top:12px;display:inline-flex"><span class="dot-live"></span>مدل واقعی مغز — قابل چرخش و جداسازی</span>
-    <div class="section-head" style="margin-top:6px"><h2>🧠 کاوشگر مغز</h2>
+    <div class="section-head" style="margin-top:6px"><h2>کاوشگر مغز</h2>
       <div class="view-tabs" style="margin:0" id="brain-modebar">
         <button class="chip active" data-bmode="3d">سه‌بعدی واقعی</button>
         <button class="chip" data-bmode="2d">نماهای تشریحی 2D</button>
@@ -972,7 +1009,7 @@ function pageQuiz(){
   const best = store.get(bestKey(quizState.scope), null);
   root.innerHTML = `
     <span class="eyebrow" style="margin-top:12px;display:inline-flex">خودت را محک بزن</span>
-    <div class="section-head" style="margin-top:6px"><h2>📝 آزمون آناتومی</h2></div>
+    <div class="section-head" style="margin-top:6px"><h2>آزمون آناتومی</h2></div>
     <div class="quiz-card quiz-setup">
       <div>
         <h4 style="margin-bottom:10px">۱) موضوع</h4>
@@ -1162,11 +1199,7 @@ function route(){
 }
 window.addEventListener('hashchange', route);
 
-/* ---------- پوسته ---------- */
-const themeBtn = $('#theme-toggle');
-function setTheme(t){ document.documentElement.dataset.theme = t; store.set('bn-theme', t); }
-themeBtn.addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
-setTheme(store.get('bn-theme', 'dark'));
+/* ---------- پوسته (تم روشن رسمی) ---------- */
 
 /* ---------- منوی موبایل ---------- */
 $('#menu-toggle').addEventListener('click', () => $('#main-nav').classList.toggle('open'));
