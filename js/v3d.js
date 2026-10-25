@@ -25,7 +25,14 @@ async function decompressGzip(buf){
 
 window.Body3D = {
   async create(host, opts){
-    opts = opts || {};
+    /* موتور ماندگار: یک‌بار ساخته می‌شود و بین صفحات فقط جابه‌جا می‌شود */
+    const prev = window.__BADAN3D_ENGINE;
+    if (prev){
+      prev.attach(host);
+      prev.onSelect = opts.onSelect || (() => {});
+      if (opts.onProgress) opts.onProgress(100);
+      return prev;
+    }
     const BASE = opts.base || 'assets/models/';
     const atlas = await (await fetch(BASE + 'atlas.json')).json();
     const parts = atlas.parts;
@@ -46,7 +53,7 @@ window.Body3D = {
 
     /* ---------- رندرر ---------- */
     let renderer;
-    try { renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:'high-performance' }); }
+    try { renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:'high-performance', logarithmicDepthBuffer:true }); }
     catch(e){ throw new Error('مرورگر شما WebGL را پشتیبانی نمی‌کند یا غیرفعال است.'); }
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -389,8 +396,9 @@ window.Body3D = {
 
     /* ---------- حلقه رندر ---------- */
     const clock = new THREE.Clock();
+    let curHost = host;
     const resize = () => {
-      const w = Math.max(60, host.clientWidth || 0), h = Math.max(60, host.clientHeight || 0);
+      const w = Math.max(60, curHost.clientWidth || 0), h = Math.max(60, curHost.clientHeight || 0);
       if (!w || !h) return;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
@@ -413,9 +421,34 @@ window.Body3D = {
       ctlApply();
       applyState();
       if (pendingMove){ doHover(pendingMove); pendingMove = null; }
-      if (dirty){ renderer.render(scene, camera); dirty = false; }
+      if (dirty && !inst._detached){ renderer.render(scene, camera); dirty = false; }
     };
     animate();
+
+    /* اتصال/جدا شدن بین صفحات — کانواس و کانتکست یکسان می‌ماند */
+    const parking = (() => {
+      let p = document.getElementById('gl3d-parking');
+      if (!p){
+        p = document.createElement('div');
+        p.id = 'gl3d-parking';
+        p.style.cssText = 'position:absolute;left:-200px;top:-200px;width:10px;height:10px;overflow:hidden;opacity:0;pointer-events:none';
+        document.body.appendChild(p);
+      }
+      return p;
+    })();
+    inst.attach = newHost => {
+      if (curHost === newHost){ resize(); return; }
+      newHost.appendChild(renderer.domElement);
+      curHost = newHost;
+      ro.disconnect(); ro.observe(curHost);
+      inst._detached = false;
+      resize();
+    };
+    inst.detach = () => {
+      parking.appendChild(renderer.domElement);
+      curHost = parking;
+      inst._detached = true;
+    };
 
     /* ---------- API عمومی ---------- */
     inst.setView = v => { inst._view = v; fitView(v); };

@@ -221,7 +221,7 @@ function bindLoader(host){
 
 /* ---------- استیج سه‌بعدی (مشترک) ---------- */
 let active3D = null;
-function dispose3D(){ if (active3D){ active3D.dispose(); active3D = null; } }
+function detach3D(){ if (active3D) active3D.detach(); }
 
 function build3DStage(host, { brainOnly, onReset, systems, autoRotate } = {}){
   host.innerHTML = `
@@ -261,6 +261,9 @@ function build3DStage(host, { brainOnly, onReset, systems, autoRotate } = {}){
       onSelect: (part) => handle3DSelect(part, host, brainOnly)
     }).then(inst => {
       active3D = inst;
+      /* وضعیت پیش‌فرض هر صفحه (موتور ماندگار است) */
+      inst.setArrange(false); inst.setIsolate(false); inst.select([]);
+      inst.setExplode(0); inst.setMarkers(false); inst.setRotate(false);
       if (brainOnly){
         /* فقط سر: دستگاه‌هایی که در ناحیه سر ساختار دارند؛ جمجمه پیش‌فرض خاموش تا مغز دیده شود */
         const headSys = new Set();
@@ -275,7 +278,7 @@ function build3DStage(host, { brainOnly, onReset, systems, autoRotate } = {}){
         const hud = $('.hud.bottom', host);
         const skullPill = document.createElement('button');
         skullPill.className = 'hud-pill'; skullPill.id = 'hud-skull';
-        skullPill.textContent = '🦴 نمایش جمجمه';
+        skullPill.textContent = 'نمایش جمجمه';
         hud.insertBefore(skullPill, hud.firstChild);
         skullPill.addEventListener('click', () => {
           skullPill.classList.toggle('on');
@@ -288,6 +291,9 @@ function build3DStage(host, { brainOnly, onReset, systems, autoRotate } = {}){
       else if (systems){
         inst.setSystems(systems);
         if (autoRotate) inst.setRotate(true);
+      }
+      else {
+        inst.setSystems(ATLAS_SYS.map(x => x[0]));
       }
       $('#hud-views', host).addEventListener('click', e => {
         const b = e.target.closest('[data-view]'); if (!b || !active3D) return;
@@ -521,22 +527,32 @@ function mountStage(host, svgHtml, opts){
     st.ty = cy - (cy - st.ty) * k;
     st.scale = ns; apply();
   }, { passive:false });
-  let down = false, sx = 0, sy = 0;
+  /* چند-لمس: یک انگشت پن، دو انگشت پینچ‌زوم */
+  const pts = new Map();
+  let pinch0 = 0, scale0 = 1;
   vp.addEventListener('pointerdown', e => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    down = true; st.dragDist = 0;
-    sx = e.clientX - st.tx; sy = e.clientY - st.ty;
     vp.setPointerCapture(e.pointerId);
-    vp.classList.add('dragging');
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    st.dragDist = 0; vp.classList.add('dragging');
+    if (pts.size === 2){ const a=[...pts.values()]; pinch0 = Math.hypot(a[0].x-a[1].x, a[0].y-a[1].y); scale0 = st.scale; }
   });
   vp.addEventListener('pointermove', e => {
-    if (!down) return;
-    st.tx = e.clientX - sx; st.ty = e.clientY - sy;
-    st.dragDist += Math.abs(e.movementX||0) + Math.abs(e.movementY||0);
-    apply();
+    if (!pts.has(e.pointerId)) return;
+    const p = pts.get(e.pointerId);
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    st.dragDist += Math.abs(dx) + Math.abs(dy);
+    if (pts.size === 1){ st.tx += dx; st.ty += dy; apply(); }
+    else if (pts.size === 2 && pinch0){
+      const a=[...pts.values()];
+      const d = Math.hypot(a[0].x-a[1].x, a[0].y-a[1].y);
+      st.scale = Math.min(8, Math.max(.55, scale0 * d / pinch0)); apply();
+    }
   });
-  ['pointerup','pointercancel'].forEach(ev => vp.addEventListener(ev, () => {
-    down = false; vp.classList.remove('dragging');
+  ['pointerup','pointercancel'].forEach(ev => vp.addEventListener(ev, e => {
+    pts.delete(e.pointerId); if (pts.size < 2) pinch0 = 0;
+    if (!pts.size) vp.classList.remove('dragging');
   }));
   const zoomBtn = f => {
     const r = host.getBoundingClientRect();
@@ -620,7 +636,7 @@ function pageHome(){
       <p>${sys.short}</p>
     </a>`).join('');
   /* هیروی سه‌بعدی */
-  dispose3D();
+  detach3D();
   const heroHost = $('#hero-3d');
   heroHost.innerHTML = `
     <div class="gl3d-canvas"></div>
@@ -635,6 +651,9 @@ function pageHome(){
       onSelect: () => { location.hash = '#/body'; }
     }).then(inst => {
       active3D = inst;
+      inst.setArrange(false); inst.setIsolate(false); inst.select([]);
+      inst.setExplode(0); inst.setMarkers(false);
+      inst.setSystems(ATLAS_SYS.map(x => x[0]));
       inst.setRotate(true);
     }).catch(e => ld.fail('بارگذاری ناموفق: ' + (e&&e.message||e)));
   });
@@ -725,7 +744,7 @@ function pageSystem(id){
   };
 
   if (atlasSystems){
-    dispose3D();
+    detach3D();
     build3DStage($('.js-sys3d'), {
       systems: atlasSystems, autoRotate: true,
       onReset: () => { if (active3D) active3D.setSystems(atlasSystems); }
@@ -739,7 +758,7 @@ function pageSystem(id){
       $('#sys-3d-wrap').hidden = !is3d;
       if ($('#sys-2d-wrap')) $('#sys-2d-wrap').hidden = is3d;
       if (!is3d){
-        dispose3D();
+        detach3D();
         if (!stage2dMounted && fig){
           stage2dMounted = true;
           const st = mountStage($('.js-sysfig'), fig, {});
@@ -779,7 +798,7 @@ function pageBody(){
       <a class="chip" href="#/female" style="cursor:pointer">🌸 دستگاه تولیدمثل زنانه — تفصیلی</a>
     </div>
     <div id="female-note" class="brain-hint" hidden>♀ در حالت زن، بخش تولیدمثل مردانه از مدل کنار گذاشته می‌شود؛ دستگاه تولیدمثل زنانه را با <a href="#/female">۱۰ بخش تفصیلی و اجزا</a> ببینید. (مدل مرجع BodyParts3D مردانه است)</div>
-    <div style="display:grid;grid-template-columns:290px 1fr;gap:18px;align-items:start" class="body3d-layout">
+    <div class="body3d-layout">
       <aside class="brain-side" style="position:sticky;top:calc(var(--topbar-h) + 14px)">
         <div class="brain-detail" style="padding:14px">
           <input id="p3d-search" placeholder="جستجو در ۲۲۳۴ ساختار…" style="width:100%;background:rgba(148,163,184,.08);border:1px solid var(--line);border-radius:10px;padding:9px 13px;color:var(--tx);font-family:inherit;outline:none" autocomplete="off">
@@ -1029,7 +1048,7 @@ function pageBrain(){
     $('#brain-3d-wrap').hidden = !is3d;
     $('#brain-2d-wrap').hidden = is3d;
     if (!is3d){
-      dispose3D();
+      detach3D();
       if (!stage2dMounted){ stage2dMounted = true; renderStage(); renderLegend(); }
     }
   });
@@ -1289,7 +1308,7 @@ document.addEventListener('keydown', e => {
 function route(){
   const hash = location.hash.replace(/^#\/?/, '');
   const [seg, param] = hash.split('/');
-  closeModal(); closeSearch(); dispose3D();
+  closeModal(); closeSearch(); detach3D();
   window.scrollTo({ top:0 });
   if (seg === 'systems' && param){ pageSystem(param); }
   else if (seg === 'body'){ pageBody(); }
