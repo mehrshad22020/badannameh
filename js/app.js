@@ -224,6 +224,7 @@ let active3D = null;
 function detach3D(){ if (active3D) active3D.detach(); }
 
 function build3DStage(host, { brainOnly, onReset, systems, autoRotate } = {}){
+  host.classList.add('stage3d');
   host.innerHTML = `
     <div class="gl3d-canvas"></div>
     <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
