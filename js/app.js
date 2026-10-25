@@ -594,7 +594,7 @@ function pageHome(){
       <a class="btn" href="#/body">کاوش سه‌بعدی بدن</a>
       <a class="btn ghost" href="#/brain">کاوشگر مغز</a>
     </div>
-    <span class="dedication">با ❤ ساخته‌شده توسط <b>مهرشاد</b> — تقدیم به <b>گلسا</b> 🌷</span>
+    <span class="dedication">تقدیم به <b>گلسا</b> 🌷</span>
           <div class="stats">
             <div class="stat"><b>۲۲۳۴</b><span>مش سه‌بعدی واقعی</span></div>
             <div class="stat"><b>${fa(SYSTEMS.length)}</b><span>دستگاه بدن</span></div>
@@ -603,7 +603,7 @@ function pageHome(){
           </div>
         </div>
         <div class="hero-visual-wrap">
-          <div class="stage3d" id="hero-3d" style="min-height:460px"></div>
+          <div class="stage3d" id="hero-3d" style="min-height:560px"></div>
         </div>
       </div>
     </section>
@@ -706,8 +706,8 @@ function pageSystem(id){
         ${fig ? `<button class="chip" data-m="2d">نمودار ۲بعدی</button>` : ''}
         <span class="small muted" style="margin-inline-start:6px">کلیک روی هر قطعه = نام و شرح · مارکرها قطعات ریز را نشان می‌دهند</span>
       </div>
-      <div id="sys-3d-wrap"><div class="js-sys3d" style="height:600px"></div></div>
-      ${fig ? `<div id="sys-2d-wrap" hidden><div class="js-sysfig" style="height:560px"></div><p class="small muted">${sys.figureNote||''}</p></div>` : ''}
+      <div id="sys-3d-wrap"><div class="js-sys3d stage-xl"></div></div>
+      ${fig ? `<div id="sys-2d-wrap" hidden><div class="js-sysfig stage-lg"></div><p class="small muted">${sys.figureNote||''}</p></div>` : ''}
     ` : (fig ? `<div class="js-sysstage" style="height:560px;margin:18px 0 8px"></div><p class="small muted">${sys.figureNote||''}</p>` : '')}
     <div class="section-head"><h2>اعضای این دستگاه</h2><span class="muted">دکمه ⌖ = جداسازی همان عضو در مدل سه‌بعدی</span></div>
     <div class="organ-list">
@@ -820,7 +820,7 @@ function pageBody(){
         </div>
       </aside>
       <div>
-        <div class="stage3d" id="p3d-stage" style="min-height:640px"></div>
+        <div class="stage3d stage-xl" id="p3d-stage"></div>
         <p class="small muted" style="margin-top:10px">💡 با اسلایدر «انفجار لایه‌ها» بدن باز می‌شود و هر دستگاه به سمت خودش می‌رود. با «جداسازی» فقط ساختار انتخابی می‌ماند و دوربین به آن زوم می‌کند.</p>
       </div>
     </div>
@@ -932,7 +932,7 @@ function pageBrain(){
     <div class="brain-hint">💡 ساختار مغز را از فهرست انتخاب کن یا روی مدل کلیک کن؛ با «جداسازی» بقیه کم می‌شوند و دوربین روی همان بخش زوم می‌کند — دقیقاً مثل برداشتن آن از مغز واقعی.</div>
     <div id="brain-3d-wrap">
       <div style="display:grid;grid-template-columns:1fr 350px;gap:18px;align-items:start" class="body3d-layout">
-        <div class="stage3d" id="b3d-stage" style="min-height:620px"></div>
+        <div class="stage3d stage-xl" id="b3d-stage"></div>
         <aside class="brain-side" style="position:sticky;top:calc(var(--topbar-h) + 14px)">
           ${BRAIN.groups.map(g => `
             <div class="bgroup"><h4>${g.name}</h4><div class="bparts">
@@ -953,7 +953,7 @@ function pageBrain(){
       </div>
       <div class="brain-layout">
         <div>
-          <div class="js-brainstage" style="height:520px"></div>
+          <div class="js-brainstage stage-xl"></div>
           <div class="legend" id="brain-legend"></div>
         </div>
         <aside class="brain-side">

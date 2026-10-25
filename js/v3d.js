@@ -229,7 +229,7 @@ window.Body3D = {
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z);
       ctl.target.copy(center);
-      ctl.radius = Math.max(.5, (maxDim / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 2.1);
+      ctl.radius = Math.max(.5, (maxDim / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.45);
       ctlApply();
     };
     const fitArrange = () => {
