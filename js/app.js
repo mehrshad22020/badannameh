@@ -74,30 +74,65 @@ const PART_TO_ORGAN = {
   'left ureter':'ureters','right ureter':'ureters','urinary bladder':'bladder','urethra':'urethra',
   'pituitary gland':'pituitary','pineal body':'pineal','left adrenal gland':'adrenal','right adrenal gland':'adrenal',
   'left lobe of thymus':'thymus','right lobe of thymus':'thymus',
-  'frontal bone':'skull','parietal bone':'skull','temporal bone':'skull','occipital bone':'skull',
-  'zygomatic bone':'skull','maxilla':'skull','mandible':'skull','hyoid bone':'skull','ethmoid':'skull',
   'clavicle':'clavicle','scapula':'scapula','femur':'femur','patella':'patella','tibia':'shank','fibula':'shank',
   'humerus':'humerus','radius':'forearm','ulna':'forearm',
-  'atlas':'spine','axis':'spine','sacrum':'spine','coccyx':'spine',
-  'body of sternum':'sternum','manubrium of sternum':'sternum','xiphoid process':'sternum',
-  'hip bone':'pelvis','ilium':'pelvis','ischium':'pelvis','pubis':'pelvis',
-  'deltoid':'deltoid','pectoralis major':'pectoral','biceps brachii':'biceps','triceps brachii':'triceps',
-  'rectus abdominis':'abs','external oblique':'obliques','trapezius':'trapezius','latissimus dorsi':'lats',
-  'gluteus maximus':'glutes','quadriceps femoris':'quads','rectus femoris':'quads','vastus lateralis':'quads',
-  'vastus medialis':'quads','vastus intermedius':'quads','biceps femoris':'hamstrings',
-  'semitendinosus':'hamstrings','semimembranosus':'hamstrings','gastrocnemius':'calves','soleus':'calves',
-  'sartorius':'sartorius','masseter':'masseter','eyeball':'eye','cornea':'eye','lens':'eye','iris':'eye',
-  'retina':'eye','sclera':'eye','external ear':'ear','tympanic membrane':'ear','cochlea':'ear',
+  'hip bone':'pelvis',
   'testis':'male-repro','epididymis':'male-repro','prostate':'male-repro',
-  /* مغز */
-  'cerebellum':'@cerebellum','hypothalamus':'@hypothalamus','midbrain':'@midbrain','pons':'@pons',
-  'medulla oblongata':'@medulla','thalamus':'@thalamus','hippocampus':'@hippocampus','amygdala':'@amygdala',
-  'caudate nucleus':'@basal-ganglia','putamen':'@basal-ganglia','globus pallidus':'@basal-ganglia',
-  'internal capsule':'@basal-ganglia','cingulate gyrus':'@cingulate','insula':'@insula',
-  'corpus callosum':'@corpus-callosum','pituitary gland_':'','optic chiasm':'@pituitary',
-  'occipital lobe':'@occipital-lobe','fourth ventricle':'@ventricles','mammillary body':'@hypothalamus',
-  'optic nerve':'@cranial-nerves','trigeminal nerve':'@cranial-nerves','facial nerve':'@cranial-nerves'
+  'eyeball':'eye','cornea':'eye','lens':'eye','iris':'eye','retina':'eye','sclera':'eye',
+  'external ear':'ear','tympanic membrane':'ear','cochlea':'ear'
 };
+
+function organIdForPart(part){
+  if (part.system === 'cardiac') return 'heart';
+  const base = part.name.replace(/^(Left|Right)\s+/i,'').trim().toLowerCase();
+  const direct = PART_TO_ORGAN[base] || PART_TO_ORGAN[part.name.toLowerCase()];
+  if (direct) return direct;
+  /* عضلات خاص — ترتیب مهم است */
+  if (/biceps femoris|semitendinosus|semimembranosus/.test(base)) return 'hamstrings';
+  if (/triceps/.test(base)) return 'triceps';
+  if (/biceps/.test(base)) return 'biceps';
+  if (/deltoid/.test(base)) return 'deltoid';
+  if (/pectoralis/.test(base)) return 'pectoral';
+  if (/trapezius/.test(base)) return 'trapezius';
+  if (/latissimus dorsi/.test(base)) return 'lats';
+  if (/gluteus/.test(base)) return 'glutes';
+  if (/quadriceps|vastus/.test(base)) return 'quads';
+  if (/sartorius/.test(base)) return 'sartorius';
+  if (/masseter/.test(base)) return 'masseter';
+  if (/gastrocnemius|soleus/.test(base)) return 'calves';
+  /* عصب‌های شناخته‌شده */
+  if (/sciatic/.test(base)) return 'sciatic';
+  if (/vagus/.test(base)) return 'vagus';
+  /* دستگاه تنفسی — ریه‌ها به‌شکل درخت برونشیت مدل شده‌اند */
+  if (/bronchial tree|lingular|lung/.test(base)) return 'lungs';
+  if (/bronchus/.test(base)) return 'bronchi';
+  /* کبد و مجاری صفراوی */
+  if (/liver|hepatic|biliary/.test(base)) return 'liver';
+  if (/cystic/.test(base)) return 'gallbladder';
+  if (/spinal cord|cauda equina/.test(base)) return 'spinal-cord';
+  /* عصب‌های سر → کاوشگر مغز */
+  if (part.system === 'nervous'){
+    const cy = (part.bounds[0][1] + part.bounds[1][1]) / 2;
+    if (cy > 1.42) return /nerve|ganglion/i.test(base) ? 'cranial-nerves' : 'brain';
+    if (/autonomic|sympathetic|parasympathetic/i.test(base)) return 'autonomic';
+    return null;
+  }
+  /* جمجمه، ستون و لگن */
+  if (/frontal bone|parietal bone|temporal bone|occipital bone|zygomatic|sphenoid|ethmoid|vomer|lacrimal bone|maxilla|mandible|hyoid/.test(base)) return 'skull';
+  if (/atlas|axis|vertebra|sacrum|coccyx/.test(base)) return 'spine';
+  if (/ilium|ischium|pubis|hip bone/.test(base)) return 'pelvis';
+  if (/sternum|manubrium|xiphoid/.test(base)) return 'sternum';
+  if (/vertebra/.test(base)) return 'spine';
+  if (/ rib$/.test(base)) return 'ribs';
+  if (/phalanx|metacarpal|carpal/i.test(base)) return 'hand';
+  if (/metatarsal|tarsal|calcaneus|talus|navicular|cuboid|cuneiform/i.test(base)) return 'foot';
+  if (/small intestine|jejunum|ileum|duodenum|colon|cecum|rectum|anal|mesentery|peritoneum|omentum/i.test(base)) return 'small-intestine';
+  if (/artery/.test(base)) return 'aorta';
+  if (/vein/.test(base)) return 'veins';
+  if (/muscle/.test(base)) return 'muscle-types';
+  if (/cartilage|ligament|tendon|retinaculum|aponeurosis|raphe|fascia/.test(base)) return 'joints';
+  return null;
+}
 
 /* نگاشت ساختار آتلاس → داده مغز سایت */
 const PART_TO_BRAIN = {
@@ -188,7 +223,7 @@ function bindLoader(host){
 let active3D = null;
 function dispose3D(){ if (active3D){ active3D.dispose(); active3D = null; } }
 
-function build3DStage(host, { brainOnly, onReset } = {}){
+function build3DStage(host, { brainOnly, onReset, systems, autoRotate } = {}){
   host.innerHTML = `
     <div class="gl3d-canvas"></div>
     <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
@@ -249,6 +284,10 @@ function build3DStage(host, { brainOnly, onReset } = {}){
           if (on) sys.add('skeletal'); else sys.delete('skeletal');
           active3D.setSystems(sys);
         });
+      }
+      else if (systems){
+        inst.setSystems(systems);
+        if (autoRotate) inst.setRotate(true);
       }
       $('#hud-views', host).addEventListener('click', e => {
         const b = e.target.closest('[data-view]'); if (!b || !active3D) return;
@@ -619,10 +658,21 @@ function pageSystems(){
   bindReveal();
 }
 
+/* نگاشت دستگاه‌های سایت به دستگاه‌های آتلاس سه‌بعدی */
+const SYS_TO_ATLAS = {
+  skeletal:['skeletal'], muscular:['muscular'], nervous:['nervous'],
+  cardio:['cardiac','arterial','venous'], respiratory:['respiratory'],
+  digestive:['digestive'], urinary:['urinary'], endocrine:['endocrine'],
+  lymphatic:['lymphatic'], sensory:['sensory'], reproductive:['reproductive']
+};
+
 function pageSystem(id){
   const sys = SYSTEMS.find(s => s.id === id);
   if (!sys){ location.hash = '#/systems'; return; }
   const fig = window.FIGS[sys.figure];
+  const atlasSystems = SYS_TO_ATLAS[sys.id] || null;
+  const femaleLink = sys.id === 'reproductive'
+    ? `<a class="chip" href="#/female" style="border-color:var(--amber);color:var(--amber-dark)">دستگاه تولیدمثل زنانه — تفصیلی با اجزا</a>` : '';
   app.innerHTML = `<div class="container">
     <a class="small muted" href="#/systems">← همه دستگاه‌ها</a>
     <div class="section-head" style="margin-top:8px">
@@ -630,35 +680,92 @@ function pageSystem(id){
       <span class="en muted">${sys.en}</span>
     </div>
     <p class="muted" style="max-width:78ch">${sys.overview}</p>
-    <div class="chips">${sys.facts.map(f => `<span class="chip" style="cursor:default"><b style="color:${sys.color}">${f.t}</b> ${f.d}</span>`).join('')}</div>
-    ${fig ? `<div class="js-sysstage" style="height:560px;margin:18px 0 8px"></div>
-      <p class="small muted">${sys.figureNote||''}</p>` : ''}
-    <div class="section-head"><h2>اعضای این دستگاه</h2><span class="muted">تصاویر واقعی + شرح کامل فارسی</span></div>
+    <div class="chips">${sys.facts.map(f => `<span class="chip" style="cursor:default"><b style="color:${sys.color}">${f.t}</b> ${f.d}</span>`).join('')}${femaleLink}</div>
+    ${atlasSystems ? `
+      <div class="view-tabs" id="sys-mode" style="margin:6px 0 12px">
+        <button class="chip active" data-m="3d">سه‌بعدی واقعی</button>
+        ${fig ? `<button class="chip" data-m="2d">نمودار ۲بعدی</button>` : ''}
+        <span class="small muted" style="margin-inline-start:6px">کلیک روی هر قطعه = نام و شرح · مارکرها قطعات ریز را نشان می‌دهند</span>
+      </div>
+      <div id="sys-3d-wrap"><div class="js-sys3d" style="height:600px"></div></div>
+      ${fig ? `<div id="sys-2d-wrap" hidden><div class="js-sysfig" style="height:560px"></div><p class="small muted">${sys.figureNote||''}</p></div>` : ''}
+    ` : (fig ? `<div class="js-sysstage" style="height:560px;margin:18px 0 8px"></div><p class="small muted">${sys.figureNote||''}</p>` : '')}
+    <div class="section-head"><h2>اعضای این دستگاه</h2><span class="muted">دکمه ⌖ = جداسازی همان عضو در مدل سه‌بعدی</span></div>
     <div class="organ-list">
       ${sys.organs.map(o => {
         const img = imgFor(o.id);
-        return `<button class="organ-row" data-organ="${o.id}" style="--oc:${sys.color}">
-          ${img?`<img src="assets/img/${img.file}" alt="" style="width:52px;height:52px;object-fit:cover;border-radius:10px;border:1px solid var(--line)">`:''}
-          <span style="text-align:start"><b>${o.name}</b><span>${o.en||''}</span></span>
-        </button>`;
+        return `<div class="organ-row" data-organ="${o.id}" style="--oc:${sys.color};cursor:default">
+          ${img?`<img src="assets/img/${img.file}" alt="" loading="lazy">`:''}
+          <button class="organ-open" data-organ="${o.id}" style="flex:1;text-align:start;background:none;border:none;color:inherit;font:inherit;cursor:pointer;padding:0">
+            <b>${o.name}</b><span>${o.en||''}</span>
+          </button>
+          ${atlasSystems?`<button class="icon-btn organ-iso" data-iso="${o.id}" title="جداسازی در مدل سه‌بعدی" style="width:34px;height:34px;border-radius:9px">${icon('target')}</button>`:''}
+        </div>`;
       }).join('')}
     </div>
   </div>`;
-  if (fig){
+
+  const wire = () => {
+    $$('.organ-open').forEach(b => b.addEventListener('click', () => openOrganModal(b.dataset.organ)));
+    $$('.organ-iso').forEach(b => {
+      if (!relatedPartIds(b.dataset.iso, ATLAS_PARTS_CACHE || []).length){ b.remove(); return; }
+      b.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (!active3D) return;
+        const ids = relatedPartIds(b.dataset.iso, ATLAS_PARTS_CACHE || []);
+        if (!ids.length) return;
+        active3D.setSystems([...new Set(ATLAS_PARTS_CACHE.filter(p => ids.includes(p.id)).map(p => p.system))]);
+        active3D.select(ids);
+        active3D.setIsolate(true);
+        const sysWrap = $('#sys-3d-wrap');
+        if (sysWrap && sysWrap.hidden){ $('#sys-mode [data-m="3d"]')?.click(); }
+        closeModal();
+      });
+    });
+  };
+
+  if (atlasSystems){
+    dispose3D();
+    build3DStage($('.js-sys3d'), {
+      systems: atlasSystems, autoRotate: true,
+      onReset: () => { if (active3D) active3D.setSystems(atlasSystems); }
+    });
+    atlasData().then(a => { ATLAS_PARTS_CACHE = a ? a.parts : []; wire(); });
+    let stage2dMounted = false;
+    $('#sys-mode').addEventListener('click', e => {
+      const b = e.target.closest('[data-m]'); if (!b) return;
+      const is3d = b.dataset.m === '3d';
+      $$('#sys-mode .chip[data-m]').forEach(c => c.classList.toggle('active', c === b));
+      $('#sys-3d-wrap').hidden = !is3d;
+      if ($('#sys-2d-wrap')) $('#sys-2d-wrap').hidden = is3d;
+      if (!is3d){
+        dispose3D();
+        if (!stage2dMounted && fig){
+          stage2dMounted = true;
+          const st = mountStage($('.js-sysfig'), fig, {});
+          $('.js-sysfig').addEventListener('click', ev => {
+            const g = ev.target.closest('.hot[data-organ]');
+            if (g && isClick(st)) openOrganModal(g.dataset.organ);
+          });
+        }
+      }
+    });
+  } else if (fig){
     const st = mountStage($('.js-sysstage'), fig, {});
     $('.js-sysstage').addEventListener('click', e => {
       const g = e.target.closest('.hot[data-organ]');
       if (g && isClick(st)) openOrganModal(g.dataset.organ);
     });
   }
-  $$('.organ-row').forEach(b => b.addEventListener('click', () => openOrganModal(b.dataset.organ)));
+  if (!atlasSystems) wire();
   bindReveal();
 }
 
 /* ---------- کاوش سه‌بعدی بدن ---------- */
 let atlasPromise = null;
+let ATLAS_PARTS_CACHE = [];
 function atlasData(){
-  if (!atlasPromise) atlasPromise = fetch('assets/models/atlas.json').then(r => r.json()).catch(() => null);
+  if (!atlasPromise) atlasPromise = fetch('assets/models/atlas.json').then(r => r.json()).then(a => { ATLAS_PARTS_CACHE = a.parts; return a; }).catch(() => null);
   return atlasPromise;
 }
 const ATLAS_COUNTS = {};
