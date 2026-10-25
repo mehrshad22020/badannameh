@@ -16,6 +16,7 @@ const SYS_COLORS = {
 };
 
 async function decompressGzip(buf){
+  if (!(buf[0] === 0x1f && buf[1] === 0x8b)) return buf; /* سرور خودش باز کرده است */
   if (typeof DecompressionStream === 'undefined') throw new Error('مرورگر شما DecompressionStream ندارد؛ از کروم/اج/فایرفاکس جدید استفاده کنید.');
   const ds = new DecompressionStream('gzip');
   const stream = new Blob([buf]).stream().pipeThrough(ds);
