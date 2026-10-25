@@ -1,19 +1,19 @@
 /* ============================================================
-   بدن‌نامه — موتور سه‌بعدی
-   بارگذاری و رندر آتلاس واقعی BodyParts3D (۲,۲۳۴ مش آناتومیک)
-   فرمت: chunks باینری (positions Float32 + normals Int16 + indices Uint32)
+   بدن‌نامه — موتور سه‌بعدی v2
+   آتلاس واقعی BodyParts3D + کنترلر دوربین دست‌ساز
+   (چرخش/زوم/پن/پینچ بدون وابستگی — همیشه پاسخ‌گو)
 ============================================================ */
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const SYS_COLORS = {
-  skeletal:'#cdd8e6', muscular:'#e0685f', arterial:'#d84a4a', venous:'#5b8def',
-  nervous:'#e8c15a', digestive:'#f0a94b', respiratory:'#58b6d8', urinary:'#45c6d8',
-  reproductive:'#d873b8', lymphatic:'#58c98a', endocrine:'#e084c8', integumentary:'#d9c9a8',
-  connective:'#9aa7b5', sensory:'#8ab8c8', cardiac:'#e05a5a'
+  skeletal:'#8fa3bd', muscular:'#d95f57', arterial:'#c74040', venous:'#4a74d8',
+  nervous:'#d8a91f', digestive:'#e89a2f', respiratory:'#4aa8cc', urinary:'#2fb3c4',
+  reproductive:'#c45fa8', lymphatic:'#3fb56f', endocrine:'#d066b4', integumentary:'#cbb896',
+  connective:'#8d9bb0', sensory:'#6fa8bc', cardiac:'#d64f4f'
 };
+const SYS_ORDER = Object.keys(SYS_COLORS);
 
 async function decompressGzip(buf){
   if (!(buf[0] === 0x1f && buf[1] === 0x8b)) return buf; /* سرور خودش باز کرده است */
@@ -27,7 +27,6 @@ window.Body3D = {
   async create(host, opts){
     opts = opts || {};
     const BASE = opts.base || 'assets/models/';
-    /* ---------- آتلاس ---------- */
     const atlas = await (await fetch(BASE + 'atlas.json')).json();
     const parts = atlas.parts;
     const N = parts.length;
@@ -36,13 +35,10 @@ window.Body3D = {
     const selTex = new Uint8Array(width * 4);
     const partTexture = new THREE.DataTexture(state, width, 1, THREE.RGBAFormat, THREE.FloatType);
     const selectionTexture = new THREE.DataTexture(selTex, width, 1, THREE.RGBAFormat);
-    [partTexture, selectionTexture].forEach(t => {
-      t.minFilter = t.magFilter = THREE.NearestFilter;
-      t.needsUpdate = true;
-    });
+    [partTexture, selectionTexture].forEach(t => { t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; });
     const centers = parts.map(p => new THREE.Vector3().fromArray(p.bounds[0]).add(new THREE.Vector3().fromArray(p.bounds[1])).multiplyScalar(.5));
     const bounds = parts.map(p => new THREE.Box3(new THREE.Vector3().fromArray(p.bounds[0]), new THREE.Vector3().fromArray(p.bounds[1])));
-    /* قطعات ریز — کاندید مارکر (چون در دید عادی دیده نمی‌شوند) */
+    /* قطعات ریز — کاندید مارکر */
     const smallPart = parts.map(p => {
       const s = p.bounds[1].map((v, k) => v - p.bounds[0][k]);
       return Math.max(s[0], s[1], s[2]) < .12;
@@ -50,11 +46,8 @@ window.Body3D = {
 
     /* ---------- رندرر ---------- */
     let renderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:'high-performance' });
-    } catch(e){
-      throw new Error('مرورگر شما WebGL را پشتیبانی نمی‌کند یا غیرفعال است.');
-    }
+    try { renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:'high-performance' }); }
+    catch(e){ throw new Error('مرورگر شما WebGL را پشتیبانی نمی‌کند یا غیرفعال است.'); }
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -64,15 +57,9 @@ window.Body3D = {
     renderer.domElement.style.display = 'block';
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(34, 1, .005, 100);
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; controls.dampingFactor = .08;
-    controls.minDistance = .06; controls.maxDistance = 70;
-    controls.maxPolarAngle = Math.PI * .97;
-    controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
-    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
-    controls.target.set(0, .85, 0);
-    camera.position.set(.6, 1.05, 3.7);
+    const camera = new THREE.PerspectiveCamera(34, 1, .01, 300);
+    camera.position.set(0, 1.1, 3.9);
+    camera.lookAt(0, .85, 0);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     const room = new RoomEnvironment();
@@ -84,13 +71,13 @@ window.Body3D = {
     const rim = new THREE.DirectionalLight(0xdfeaff, 1.3); rim.position.set(2.4, 2, -3); scene.add(rim);
     const fill = new THREE.DirectionalLight(0xffe8dd, .3); fill.position.set(0, -2.4, -1.5); scene.add(fill);
 
-    /* زمین: دیسک درخشان و حلقه امضا */
+    /* سکو */
     const glowTex = (() => {
       const c = document.createElement('canvas'); c.width = c.height = 256;
       const g = c.getContext('2d').createRadialGradient(128,128,0,128,128,128);
-      g.addColorStop(0,'rgba(29,78,216,.22)'); g.addColorStop(.5,'rgba(29,78,216,.06)'); g.addColorStop(1,'rgba(29,78,216,0)');
+      g.addColorStop(0,'rgba(29,78,216,.20)'); g.addColorStop(.5,'rgba(29,78,216,.05)'); g.addColorStop(1,'rgba(29,78,216,0)');
       const ctx = c.getContext('2d'); ctx.fillStyle = g; ctx.fillRect(0,0,256,256);
-      const t = new THREE.CanvasTexture(c); return t;
+      return new THREE.CanvasTexture(c);
     })();
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4), new THREE.MeshBasicMaterial({ map:glowTex, transparent:true, depthWrite:false }));
     glow.rotation.x = -Math.PI/2; glow.position.y = -.03; scene.add(glow);
@@ -99,11 +86,11 @@ window.Body3D = {
     const ring2 = new THREE.Mesh(new THREE.RingGeometry(.60, .604, 128), new THREE.MeshBasicMaterial({ color:0x93b4f5, transparent:true, opacity:.16, side:THREE.DoubleSide }));
     ring2.rotation.x = -Math.PI/2; ring2.position.y = -.012; scene.add(ring2);
 
-    /* مارکرها — راهنمای یافتن قطعات ریز */
+    /* مارکر قطعات ریز */
     const markerPositions = new Float32Array(parts.length * 3);
     const markerGeometry = new THREE.BufferGeometry();
     markerGeometry.setAttribute('position', new THREE.BufferAttribute(markerPositions, 3));
-    const markerMaterial = new THREE.PointsMaterial({ color:0x1D4ED8, size:6, sizeAttenuation:false, transparent:true, opacity:.55, depthTest:false });
+    const markerMaterial = new THREE.PointsMaterial({ color:0x1D4ED8, size:6, sizeAttenuation:false, transparent:true, opacity:.5, depthTest:false });
     markerMaterial.onBeforeCompile = shader => {
       shader.fragmentShader = shader.fragmentShader.replace('#include <clipping_planes_fragment>',
         '#include <clipping_planes_fragment>\nif (distance(gl_PointCoord, vec2(0.5)) > 0.5) discard;');
@@ -112,11 +99,11 @@ window.Body3D = {
     markers.frustumCulled = false; markers.renderOrder = 10; markers.visible = false;
     scene.add(markers);
 
-    /* ---------- متریال با وضعیت GPU برای هر part ---------- */
+    /* ---------- متریال با وضعیت GPU هر قطعه ---------- */
     const materials = [];
     const materialFor = (hex, isSkin) => {
       const m = new THREE.MeshStandardMaterial({
-        color: hex, metalness:.06, roughness:.5, side:THREE.DoubleSide,
+        color: hex, metalness:.05, roughness:.52, side:THREE.DoubleSide,
         transparent: isSkin, opacity: isSkin ? .09 : 1, depthWrite: !isSkin
       });
       m.onBeforeCompile = shader => {
@@ -142,8 +129,8 @@ window.Body3D = {
 
     /* ---------- بارگذاری chunkها ---------- */
     const geometries = [];
-    const pickers = []; /* مش نامرئی تک‌قطعه‌ای برای picking دقیق و سریع */
-    const sysMeshes = new Map(); /* مش ادغام‌شده هر دستگاه — برای خاموش‌کردن کامل دستگاه‌های پنهان (بهینه‌سازی) */
+    const pickers = [];
+    const sysMeshes = new Map();
     let loaded = 0, disposed = false;
     const loadChunk = async ci => {
       const chunk = atlas.chunks[ci];
@@ -195,71 +182,36 @@ window.Body3D = {
       if (err) throw err;
     })();
 
-    /* ---------- وضعیت و تعامل ---------- */
-    const inst = {
-      parts, atlas,
-      visibleSystems: new Set(Object.keys(SYS_COLORS)),
-      selected: [],
-      isolate: false, explodeT: 0,
-      _view: 'front', _rotate: false, _resetTick: 0,
-      _pan: false, _arrange: false, _grid: null,
-      onSelect: opts.onSelect || (() => {}),
-      onHover: opts.onHover || null
+    /* ---------- کنترلر دوربین دست‌ساز (چرخش/زوم/پن/پینچ) ---------- */
+    const ctl = {
+      target: new THREE.Vector3(0, .85, 0),
+      radius: 3.9, theta: 0, phi: 1.45,
+      min: .05, max: 90,
+      autoRotate: false
     };
-    let lastKey = '', amount = 0, arr = 0, dirty = true, ready = true;
-
-    const applyState = () => {
-      const key = [...inst.visibleSystems].sort().join(',') + '|' + inst.selected.join(',')
-        + '|' + (inst.isolate ? 1 : 0) + '|' + inst.explodeT.toFixed(3) + '|' + arr.toFixed(2) + '|' + (inst._arrange ? 1 : 0);
-      if (key === lastKey) return;
-      lastKey = key;
-      const sel = new Set(inst.selected);
-      const grid = inst._arrange && inst._grid ? inst._grid.map : null;
-      parts.forEach((p, i) => {
-        const c = centers[i];
-        const vis = inst.isolate ? sel.has(p.id) : (inst.visibleSystems.has(p.system) || sel.has(p.id));
-        let dx = 0, dy = 0, dz = 0;
-        if (grid && grid.has(i)){
-          const g = grid.get(i);
-          dx = g.x * arr; dy = g.y * arr; dz = g.z * arr;
-        } else if (!inst.isolate && inst.explodeT > 0){
-          const t = inst.explodeT;
-          const groupIdx = Object.keys(SYS_COLORS).indexOf(p.system);
-          const angle = groupIdx / 15 * Math.PI * 2;
-          dx = Math.sin(angle) * t * .55;
-          dy = (c.y - .85) * t * .34;
-          dz = Math.cos(angle) * t * .55;
-        }
-        state.set([dx, dy, dz, vis ? 1 : 0], i * 4);
-        selTex[i*4] = sel.has(p.id) ? 255 : 0;
-        selTex[i*4+1] = selTex[i*4+2] = selTex[i*4+3] = 0;
-        markerPositions.set(vis && smallPart[i] ? [c.x + dx, c.y + dy, c.z + dz] : [1e6, 1e6, 1e6], i * 3);
-        const pk = pickers[i];
-        if (pk){ pk.position.set(dx, dy, dz); pk.updateMatrix(); pk.updateMatrixWorld(true); }
-      });
-      partTexture.needsUpdate = true;
-      selectionTexture.needsUpdate = true;
-      markerGeometry.attributes.position.needsUpdate = true;
-      /* بهینه‌سازی: دستگاهی که همه قطعاتش پنهان است، کلاً رندر نشود */
-      const sysAny = {};
-      for (let i = 0; i < parts.length; i++){ if (state[i*4+3] > .5){ sysAny[parts[i].system] = true; } }
-      sysMeshes.forEach((mesh, sys) => { mesh.visible = !!sysAny[sys]; });
-      materials.forEach(m => { if (m.userData.shader) m.userData.shader.uniforms.uIsolate.value = inst.isolate ? 1 : 0; });
+    const sph = new THREE.Spherical();
+    const ctlApply = () => {
+      ctl.phi = Math.max(.04, Math.min(Math.PI - .04, ctl.phi));
+      ctl.radius = Math.max(ctl.min, Math.min(ctl.max, ctl.radius));
+      sph.set(ctl.radius, ctl.phi, ctl.theta);
+      camera.position.setFromSpherical(sph).add(ctl.target);
+      camera.lookAt(ctl.target);
       dirty = true;
-      if (inst.onStateChange) inst.onStateChange();
     };
-
-    const fitView = (view) => {
-      const mobile = host.clientWidth < 768;
-      const dist = mobile ? 4.6 : 3.9;
-      const dir = view === 'front' ? new THREE.Vector3(0, .02, 1)
-        : view === 'back' ? new THREE.Vector3(0, .02, -1)
-        : view === 'side' ? new THREE.Vector3(1, .02, 0)
-        : new THREE.Vector3(.4, .08, 1).normalize();
-      controls.target.set(0, .85, 0);
-      camera.position.copy(controls.target).addScaledVector(dir, dist);
-      controls.update();
-      dirty = true;
+    const panBy = (dx, dy) => {
+      const right = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+      const up = new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion);
+      const k = ctl.radius * .0011;
+      ctl.target.addScaledVector(right, -dx * k).addScaledVector(up, dy * k);
+      ctlApply();
+    };
+    const VIEWS = { front:{t:0,p:1.47}, side:{t:Math.PI/2,p:1.47}, back:{t:Math.PI,p:1.47}, persp:{t:.5,p:1.42} };
+    const fitView = view => {
+      const v = VIEWS[view] || VIEWS.front;
+      ctl.target.set(0, .85, 0);
+      ctl.theta = v.t; ctl.phi = v.p;
+      ctl.radius = host.clientWidth < 768 ? 4.7 : 3.9;
+      ctlApply();
     };
     const fitToSelection = () => {
       const box = new THREE.Box3();
@@ -269,22 +221,76 @@ window.Body3D = {
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z);
-      const dist = Math.max(.5, (maxDim / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 2.4);
-      controls.target.copy(center);
-      camera.position.copy(center).add(new THREE.Vector3(.3, .22, 1).normalize().multiplyScalar(dist));
-      controls.update();
-      dirty = true;
+      ctl.target.copy(center);
+      ctl.radius = Math.max(.5, (maxDim / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 2.1);
+      ctlApply();
+    };
+    const fitArrange = () => {
+      if (!inst._grid) return;
+      const size = Math.max(inst._grid.width, inst._grid.height);
+      ctl.target.set(0, .9, 0);
+      ctl.theta = 0; ctl.phi = 1.45;
+      ctl.radius = Math.max(1.2, (size / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.45);
+      ctl.max = Math.max(90, ctl.radius * 2);
+      ctlApply();
     };
 
-    /* ---------- picking سریع: پیش‌فیلتر کادر محیطی روی ۲۲۳۴ قطعه ---------- */
+    /* ---------- وضعیت ---------- */
+    const inst = {
+      parts, atlas,
+      visibleSystems: new Set(SYS_ORDER),
+      selected: [],
+      isolate: false, explodeT: 0,
+      _view: 'front', _rotate: false,
+      _pan: false, _arrange: false, _grid: null,
+      onSelect: opts.onSelect || (() => {}),
+      onHover: null, onStateChange: null
+    };
+    let lastKey = '', arr = 0, dirty = true;
+
+    const applyState = () => {
+      const key = [...inst.visibleSystems].sort().join(',') + '|' + inst.selected.join(',')
+        + '|' + (inst.isolate ? 1 : 0) + '|' + inst.explodeT.toFixed(3) + '|' + arr.toFixed(2) + '|' + (inst._arrange ? 1 : 0);
+      if (key === lastKey) return;
+      lastKey = key;
+      const sel = new Set(inst.selected);
+      const grid = inst._arrange && inst._grid ? inst._grid.map : null;
+      const sysAny = {};
+      parts.forEach((p, i) => {
+        const c = centers[i];
+        const vis = inst.isolate ? sel.has(p.id) : (inst.visibleSystems.has(p.system) || sel.has(p.id));
+        let dx = 0, dy = 0, dz = 0;
+        if (grid && grid.has(i)){
+          const g = grid.get(i);
+          dx = g.x * arr; dy = g.y * arr; dz = g.z * arr;
+        } else if (!inst.isolate && inst.explodeT > 0){
+          const t = inst.explodeT;
+          const angle = SYS_ORDER.indexOf(p.system) / 15 * Math.PI * 2;
+          dx = Math.sin(angle) * t * 1.05;
+          dy = (c.y - .85) * t * .55;
+          dz = Math.cos(angle) * t * 1.05;
+        }
+        state.set([dx, dy, dz, vis ? 1 : 0], i * 4);
+        selTex[i*4] = sel.has(p.id) ? 255 : 0;
+        markerPositions.set(vis && smallPart[i] ? [c.x + dx, c.y + dy, c.z + dz] : [1e6, 1e6, 1e6], i * 3);
+        const pk = pickers[i];
+        if (pk){ pk.position.set(dx, dy, dz); pk.updateMatrix(); pk.updateMatrixWorld(true); }
+        if (vis) sysAny[p.system] = true;
+      });
+      partTexture.needsUpdate = true;
+      selectionTexture.needsUpdate = true;
+      markerGeometry.attributes.position.needsUpdate = true;
+      sysMeshes.forEach((mesh, sys) => { mesh.visible = !!sysAny[sys]; });
+      materials.forEach(m => { if (m.userData.shader) m.userData.shader.uniforms.uIsolate.value = inst.isolate ? 1 : 0; });
+      dirty = true;
+      if (inst.onStateChange) inst.onStateChange();
+    };
+
+    /* ---------- picking سریع ---------- */
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     const tmpBox = new THREE.Box3();
     const tmpPoint = new THREE.Vector3();
-    let downPos = null;
-    const hoverTip = document.createElement('div');
-    hoverTip.className = 'part-hover';
-    document.body.appendChild(hoverTip);
     const pickAt = (cx, cy) => {
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.set((cx - rect.left) / rect.width * 2 - 1, -((cy - rect.top) / rect.height * 2 - 1));
@@ -307,42 +313,86 @@ window.Body3D = {
       }
       return best;
     };
-    let pendingMove = null;
+
+    /* ---------- تعامل موس/لمس (کاملاً دست‌ساز) ---------- */
+    const canvas = renderer.domElement;
+    const hoverTip = document.createElement('div');
+    hoverTip.className = 'part-hover';
+    document.body.appendChild(hoverTip);
+    const pointers = new Map();
+    let pinchD = 0, downPos = null, pendingMove = null;
+
     const doHover = e => {
+      if (pointers.size) { hoverTip.classList.remove('show'); return; }
       const hit = pickAt(e.clientX, e.clientY);
       if (hit >= 0){
         hoverTip.textContent = inst.parts[hit].name;
         hoverTip.classList.add('show');
         hoverTip.style.left = (e.clientX + 14) + 'px';
         hoverTip.style.top = (e.clientY + 16) + 'px';
-        renderer.domElement.style.cursor = 'pointer';
+        canvas.style.cursor = 'pointer';
       } else {
         hoverTip.classList.remove('show');
-        renderer.domElement.style.cursor = 'grab';
+        canvas.style.cursor = 'grab';
       }
     };
-    renderer.domElement.addEventListener('pointermove', e => {
-      if (e.buttons){ hoverTip.classList.remove('show'); pendingMove = null; return; }
+    canvas.addEventListener('pointerdown', e => {
+      canvas.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      downPos = [e.clientX, e.clientY];
+      hoverTip.classList.remove('show');
+      if (pointers.size === 2){
+        const arr2 = [...pointers.values()];
+        pinchD = Math.hypot(arr2[0].x - arr2[1].x, arr2[0].y - arr2[1].y);
+      }
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (pointers.has(e.pointerId)){
+        const p = pointers.get(e.pointerId);
+        const dx = e.clientX - p.x, dy = e.clientY - p.y;
+        p.x = e.clientX; p.y = e.clientY;
+        if (pointers.size === 1){
+          if (inst._pan || e.buttons === 2){ panBy(dx, dy); }
+          else { ctl.theta -= dx * .0055; ctl.phi -= dy * .0055; ctlApply(); }
+        } else if (pointers.size === 2){
+          const a = [...pointers.values()];
+          const d = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
+          if (pinchD > 0){ ctl.radius = Math.max(ctl.min, Math.min(ctl.max, ctl.radius * pinchD / d)); ctlApply(); }
+          pinchD = d;
+        }
+      }
       pendingMove = e;
     });
-    renderer.domElement.addEventListener('pointerdown', e => { downPos = [e.clientX, e.clientY]; });
-    renderer.domElement.addEventListener('pointerup', e => {
-      if (!downPos) return;
-      const moved = Math.hypot(e.clientX - downPos[0], e.clientY - downPos[1]);
-      downPos = null;
-      if (moved > 7) return;
-      const hit = pickAt(e.clientX, e.clientY);
-      if (hit >= 0) inst.onSelect(inst.parts[hit], hit);
+    const endPointer = e => {
+      if (pointers.has(e.pointerId) && downPos){
+        const moved = Math.hypot(e.clientX - downPos[0], e.clientY - downPos[1]);
+        if (moved < 7 && pointers.size === 1){
+          const hit = pickAt(e.clientX, e.clientY);
+          if (hit >= 0) inst.onSelect(inst.parts[hit], hit);
+        }
+      }
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) pinchD = 0;
+    };
+    canvas.addEventListener('pointerup', endPointer);
+    canvas.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); pinchD = 0; });
+    canvas.addEventListener('pointerleave', () => { hoverTip.classList.remove('show'); });
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      ctl.radius = Math.max(ctl.min, Math.min(ctl.max, ctl.radius * Math.pow(1.0013, e.deltaY)));
+      ctlApply();
+    }, { passive:false });
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+    canvas.addEventListener('dblclick', e => {
+      if (pickAt(e.clientX, e.clientY) < 0){ inst.resetAll(); }
     });
-    renderer.domElement.addEventListener('pointerleave', () => hoverTip.classList.remove('show'));
 
-    /* حلقه رندر */
+    /* ---------- حلقه رندر ---------- */
     const clock = new THREE.Clock();
     const resize = () => {
-      const w = Math.max(60, host.clientWidth || 0);
-      const h = Math.max(60, host.clientHeight || 0);
+      const w = Math.max(60, host.clientWidth || 0), h = Math.max(60, host.clientHeight || 0);
       if (!w || !h) return;
-      renderer.setSize(w, h, false); /* استایل را CSS کنترل می‌کند (۱۰۰٪) */
+      renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       dirty = true;
@@ -350,11 +400,8 @@ window.Body3D = {
     const ro = new ResizeObserver(resize);
     ro.observe(host);
     resize();
-    /* تیک‌های تضمینی برای لِی‌اوت‌های دیرهنگام (فونت/گرید/CDN) */
     requestAnimationFrame(resize);
-    setTimeout(resize, 300);
-    setTimeout(resize, 1000);
-    setTimeout(resize, 2500);
+    setTimeout(resize, 300); setTimeout(resize, 1200); setTimeout(resize, 3000);
 
     const animate = () => {
       if (disposed) return;
@@ -362,44 +409,39 @@ window.Body3D = {
       const dt = Math.min(clock.getDelta(), .05);
       const arrTarget = inst._arrange ? 1 : 0;
       if (Math.abs(arr - arrTarget) > .001){ arr = THREE.MathUtils.damp(arr, arrTarget, 4, dt); dirty = true; }
+      if (ctl.autoRotate && !pointers.size){ ctl.theta -= dt * .35; dirty = true; }
+      ctlApply();
       applyState();
       if (pendingMove){ doHover(pendingMove); pendingMove = null; }
-      controls.autoRotate = inst._rotate;
-      controls.autoRotateSpeed = .8;
-      if (controls.autoRotate) dirty = true;
-      controls.update();
       if (dirty){ renderer.render(scene, camera); dirty = false; }
-      void ready; void dt;
     };
     animate();
 
+    /* ---------- API عمومی ---------- */
     inst.setView = v => { inst._view = v; fitView(v); };
-    inst.setRotate = on => { inst._rotate = !!on; dirty = true; };
-    inst.setSystems = set => { inst.visibleSystems = new Set(set); if (inst._arrange) computeArrange(); lastKey=''; applyState(); };
-    inst.select = ids => { inst.selected = ids || []; if (inst._arrange) computeArrange(); lastKey=''; applyState(); if (inst.isolate && inst.selected.length) fitToSelection(); };
+    inst.setRotate = on => { ctl.autoRotate = !!on; };
+    inst.setSystems = set => { inst.visibleSystems = new Set(set); if (inst._arrange) computeArrange(); lastKey = ''; applyState(); };
+    inst.select = ids => { inst.selected = ids || []; if (inst._arrange) computeArrange(); lastKey = ''; applyState(); if (inst.isolate && inst.selected.length) fitToSelection(); };
     inst.setIsolate = on => {
       on = !!on;
-      if (on && !inst.selected.length) on = false; /* بدون انتخاب، جداسازی بی‌معنی است */
-      inst.isolate = on; if (inst._arrange) computeArrange(); lastKey=''; applyState();
+      if (on && !inst.selected.length) on = false;
+      inst.isolate = on;
+      if (inst._arrange) computeArrange();
+      lastKey = ''; applyState();
       if (on && inst.selected.length) fitToSelection(); else fitView(inst._view);
     };
-    inst.setExplode = t => { inst.explodeT = Math.max(0, Math.min(1, t)); lastKey=''; applyState(); };
+    inst.setExplode = t => { inst.explodeT = Math.max(0, Math.min(1, t)); lastKey = ''; applyState(); };
     inst.resetView = () => { inst.setIsolate(false); inst.select([]); fitView(inst._view); };
     inst.resetAll = () => {
-      inst.setSystems(Object.keys(SYS_COLORS));
+      inst.setArrange(false);
+      inst.setSystems(SYS_ORDER);
       inst.select([]);
       inst.setIsolate(false);
       inst.setExplode(0);
       inst.setView('front');
     };
-    inst.setPan = on => { inst._pan = !!on; controls.mouseButtons.LEFT = on ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE; };
-    inst.zoomBy = f => {
-      const v = camera.position.clone().sub(controls.target).multiplyScalar(f);
-      const d = v.length();
-      if (d < controls.minDistance || d > controls.maxDistance) return;
-      camera.position.copy(controls.target).add(v);
-      controls.update(); dirty = true;
-    };
+    inst.setPan = on => { inst._pan = !!on; };
+    inst.zoomBy = f => { ctl.radius = Math.max(ctl.min, Math.min(ctl.max, ctl.radius * f)); ctlApply(); };
     inst.setQuality = q => {
       const map = { high: Math.min(devicePixelRatio, 2), mid: Math.min(devicePixelRatio, 1.5), low: 1 };
       renderer.setPixelRatio(map[q] || Math.min(devicePixelRatio, 1.5));
@@ -408,7 +450,6 @@ window.Body3D = {
     const computeArrange = () => {
       inst._grid = null;
       if (!inst._arrange) return;
-      const order = Object.keys(SYS_COLORS);
       const vis = [];
       parts.forEach((p, i) => {
         const v = inst.isolate ? inst.selected.includes(p.id)
@@ -417,12 +458,12 @@ window.Body3D = {
       });
       if (!vis.length) return;
       vis.sort((a, b) => {
-        const sa = order.indexOf(parts[a].system), sb = order.indexOf(parts[b].system);
+        const sa = SYS_ORDER.indexOf(parts[a].system), sb = SYS_ORDER.indexOf(parts[b].system);
         return sa !== sb ? sa - sb : parts[a].name.localeCompare(parts[b].name);
       });
       const cols = Math.max(1, Math.ceil(Math.sqrt(vis.length * 1.4)));
       const rows = Math.ceil(vis.length / cols);
-      const cell = Math.max(.14, Math.min(.55, 15 / Math.max(cols, rows)));
+      const cell = Math.max(.16, Math.min(.6, 16 / Math.max(cols, rows)));
       const map = new Map();
       vis.forEach((pi, k) => {
         const col = k % cols, row = Math.floor(k / cols);
@@ -431,15 +472,6 @@ window.Body3D = {
         map.set(pi, new THREE.Vector3(gx - centers[pi].x, gy - centers[pi].y, -centers[pi].z));
       });
       inst._grid = { map, width: cols * cell, height: rows * cell };
-    };
-    const fitArrange = () => {
-      if (!inst._grid) return;
-      const size = Math.max(inst._grid.width, inst._grid.height);
-      const dist = Math.max(1.2, (size / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.5);
-      controls.maxDistance = Math.max(70, dist * 1.8);
-      controls.target.set(0, .9, 0);
-      camera.position.set(0, .95, dist);
-      controls.update(); dirty = true;
     };
     inst.setArrange = on => {
       inst._arrange = !!on;
@@ -451,19 +483,20 @@ window.Body3D = {
     inst.isArrange = () => !!inst._arrange;
     inst.setMarkers = on => { markers.visible = !!on; dirty = true; };
     inst.isMarkers = () => markers.visible;
-    window.__zoomProbe = () => ({ dist: +camera.position.distanceTo(controls.target).toFixed(3), min: controls.minDistance, max: +controls.maxDistance.toFixed(1), zoomEnabled: controls.enableZoom, panLeft: controls.mouseButtons.LEFT });
     inst.dispose = () => {
       disposed = true;
       ro.disconnect();
       hoverTip.remove();
-      controls.dispose();
       geometries.forEach(g => g.dispose());
       materials.forEach(m => m.dispose());
       partTexture.dispose(); selectionTexture.dispose(); glowTex.dispose();
       markerGeometry.dispose(); markerMaterial.dispose();
+      renderer.forceContextLoss();
       renderer.dispose();
       renderer.domElement.remove();
     };
+    window.__debugPick = (cx, cy) => ({ hit: pickAt(cx, cy), name: pickAt(cx, cy) >= 0 ? parts[pickAt(cx, cy)].name : null });
+    window.__zoomProbe = () => ({ dist: +camera.position.distanceTo(ctl.target).toFixed(3), min: ctl.min, max: +ctl.max.toFixed(1), theta: +ctl.theta.toFixed(2) });
     return inst;
   }
 };
