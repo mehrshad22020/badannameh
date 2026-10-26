@@ -375,7 +375,7 @@ window.Body3D = {
         const moved = Math.hypot(e.clientX - downPos[0], e.clientY - downPos[1]);
         if (moved < 7 && pointers.size === 1){
           const hit = pickAt(e.clientX, e.clientY);
-          if (hit >= 0) inst.onSelect(inst.parts[hit], hit);
+          if (hit >= 0){ window.__lastSelect = inst.parts[hit].name; inst.onSelect(inst.parts[hit], hit); } else { window.__lastSelect = null; }
         }
       }
       pointers.delete(e.pointerId);
