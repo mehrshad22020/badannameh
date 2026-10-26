@@ -616,7 +616,7 @@ function pageHome(){
 
     <div class="dedication-band reveal" style="margin-top:44px">
       <div>
-        <h3>تقدیم به گلسا 🌷</h3>
+        <h3>تقدیم به گل 🌷</h3>
         <p>این اطلس با عشق ساخته شده تا یادگیری آناتومی به زبان فارسی، آسان و زیبا باشد — امید که هر کلیک، یک کشف تازه باشد.</p>
       </div>
       <div class="heart">❤</div>
