@@ -180,7 +180,7 @@ window.Body3D = {
     };
     await (async () => {
       let cursor = 0, err = null;
-      await Promise.all(Array.from({ length: 3 }, async () => {
+      await Promise.all(Array.from({ length: 6 }, async () => {
         while (cursor < atlas.chunks.length){
           const i = cursor++;
           try { await loadChunk(i); } catch(e){ if (!err) err = e; cursor = atlas.chunks.length; }
@@ -197,11 +197,15 @@ window.Body3D = {
       autoRotate: false
     };
     const sph = new THREE.Spherical();
+    const _camNext = new THREE.Vector3();
     const ctlApply = () => {
       ctl.phi = Math.max(.04, Math.min(Math.PI - .04, ctl.phi));
       ctl.radius = Math.max(ctl.min, Math.min(ctl.max, ctl.radius));
       sph.set(ctl.radius, ctl.phi, ctl.theta);
-      camera.position.setFromSpherical(sph).add(ctl.target);
+      _camNext.setFromSpherical(sph).add(ctl.target);
+      /* فقط وقتی دوربین واقعاً جابه‌جا شده dirty کن — رندرِ هرفریمِ بی‌دلیل = لگ */
+      if (_camNext.equals(camera.position)) return;
+      camera.position.copy(_camNext);
       camera.lookAt(ctl.target);
       dirty = true;
     };
@@ -429,9 +433,19 @@ window.Body3D = {
     requestAnimationFrame(resize);
     setTimeout(resize, 300); setTimeout(resize, 1200); setTimeout(resize, 3000);
 
+    /* توقف رندر وقتی بوم خارج از دید است (اسکرول/پارک) — صرفه‌جویی جدی CPU/GPU */
+    let canvasVisible = true;
+    try {
+      new IntersectionObserver(es => {
+        canvasVisible = !!es[0]?.isIntersecting;
+        if (canvasVisible) dirty = true;
+      }, { rootMargin: '120px' }).observe(renderer.domElement);
+    } catch(e) { /* مرورگر قدیمی — بدون توقف */ }
+
     const animate = () => {
       if (disposed) return;
       requestAnimationFrame(animate);
+      if (!canvasVisible) return;
       const dt = Math.min(clock.getDelta(), .05);
       const arrTarget = inst._arrange ? 1 : 0;
       if (Math.abs(arr - arrTarget) > .001){ arr = THREE.MathUtils.damp(arr, arrTarget, 4, dt); dirty = true; }
