@@ -267,14 +267,9 @@ function build3DStage(host, { brainOnly, onReset, systems, autoRotate } = {}){
       inst.setExplode(0); inst.setMarkers(false); inst.setRotate(false);
       if (brainOnly){
         /* فقط سر: دستگاه‌هایی که در ناحیه سر ساختار دارند؛ جمجمه پیش‌فرض خاموش تا مغز دیده شود */
-        const headSys = new Set();
-        inst.parts.forEach(p => {
-          const cy = (p.bounds[0][1] + p.bounds[1][1]) / 2;
-          if (cy > 1.42 && ['nervous','sensory','arterial','venous','connective','skeletal'].includes(p.system)) headSys.add(p.system);
-        });
-        headSys.delete('skeletal');
+        const headSys = new Set(['nervous','sensory']);
         inst.setSystems(headSys);
-        inst.setView('side');
+        inst.focusBrain();
         /* کلید جمجمه */
         const hud = $('.hud.bottom', host);
         const skullPill = document.createElement('button');

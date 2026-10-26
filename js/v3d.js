@@ -531,6 +531,13 @@ window.Body3D = {
       if (on && inst._grid) fitArrange(); else fitView(inst._view);
       applyState();
     };
+    inst.focusBrain = () => {
+      ctl.target.set(0, 1.5, 0);
+      ctl.theta = Math.PI / 2;
+      ctl.phi = 1.45;
+      ctl.radius = 1.7;
+      ctlApply();
+    };
     inst.isArrange = () => !!inst._arrange;
     inst.setMarkers = on => { markers.visible = !!on; dirty = true; };
     inst.isMarkers = () => markers.visible;
@@ -547,7 +554,18 @@ window.Body3D = {
       renderer.domElement.remove();
     };
     window.__debugPick = (cx, cy) => ({ hit: pickAt(cx, cy), name: pickAt(cx, cy) >= 0 ? parts[pickAt(cx, cy)].name : null });
-    window.__zoomProbe = () => ({ dist: +camera.position.distanceTo(ctl.target).toFixed(3), min: ctl.min, max: +ctl.max.toFixed(1), theta: +ctl.theta.toFixed(2) });
+    window.__zoomProbe = () => ({ dist: +camera.position.distanceTo(ctl.target).toFixed(3), min: ctl.min, max: +ctl.max.toFixed(1), theta: +ctl.theta.toFixed(2), phi: +ctl.phi.toFixed(2) });
+    window.__dbg = {
+      cam: () => ({ pos: camera.position.toArray().map(x=>+x.toFixed(2)), target: ctl.target.toArray().map(x=>+x.toFixed(2)) }),
+      project: name => {
+        const i = parts.findIndex(p => p.name === name);
+        if (i < 0) return 'no-part ' + name;
+        const v = new THREE.Vector3(centers[i].x, centers[i].y, centers[i].z).project(camera);
+        const r = renderer.domElement.getBoundingClientRect();
+        return { i, name: parts[i].name, sys: parts[i].system, w: state[i*4+3], sx: Math.round((v.x+1)/2*r.width + r.x), sy: Math.round((1-v.y)/2*r.height + r.y) };
+      },
+      pick: (cx, cy) => { const h = pickAt(cx, cy); return { hit: h, name: h >= 0 ? parts[h].name : null }; }
+    }; ({ dist: +camera.position.distanceTo(ctl.target).toFixed(3), min: ctl.min, max: +ctl.max.toFixed(1), theta: +ctl.theta.toFixed(2) });
     return inst;
   }
 };
