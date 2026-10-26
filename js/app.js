@@ -971,6 +971,7 @@ function pageBrain(){
     const p = BRAIN.parts[bid];
     const box = $('#b3d-detail');
     if (!box) return;
+    if (window.innerWidth <= 1040) box.scrollIntoView({ behavior:'smooth', block:'nearest' });
     box.innerHTML = `
       <h3><span class="chip-color" style="background:${p.color}"></span>${p.name}</h3>
       <div class="en">${p.en||''} · <span class="en">${part.name}</span></div>

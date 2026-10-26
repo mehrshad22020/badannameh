@@ -249,7 +249,7 @@ window.Body3D = {
       selected: [],
       isolate: false, explodeT: 0,
       _view: 'front', _rotate: false,
-      _pan: false, _arrange: false, _grid: null,
+      _pan: false, _arrange: false, _grid: null, _partFilter: null,
       onSelect: opts.onSelect || (() => {}),
       onHover: null, onStateChange: null
     };
@@ -265,7 +265,8 @@ window.Body3D = {
       const sysAny = {};
       parts.forEach((p, i) => {
         const c = centers[i];
-        const vis = inst.isolate ? sel.has(p.id) : (inst.visibleSystems.has(p.system) || sel.has(p.id));
+        const vis = inst.isolate ? sel.has(p.id)
+          : (inst._partFilter ? inst._partFilter(p) : (inst.visibleSystems.has(p.system) || sel.has(p.id)));
         let dx = 0, dy = 0, dz = 0;
         if (grid && grid.has(i)){
           const g = grid.get(i);
@@ -317,6 +318,22 @@ window.Body3D = {
         if (!raycaster.ray.intersectBox(tmpBox, tmpPoint)) continue;
         const hits = raycaster.intersectObject(pk, false);
         if (hits[0] && hits[0].distance < nearest){ nearest = hits[0].distance; best = i; }
+      }
+      if (best < 0){
+        /* فالبک: نزدیک‌ترین مرکز پروژه‌شده */
+        let bd = 26, bi = -1;
+        const v = new THREE.Vector3();
+        for (let i = 0; i < parts.length; i++){
+          if (state[i*4+3] < .5) continue;
+          const p = parts[i];
+          if (p.system === 'integumentary' && hasSolid) continue;
+          v.set(centers[i].x, centers[i].y, centers[i].z).project(camera);
+          if (v.z < -1 || v.z > 1) continue;
+          const sx = (v.x + 1) / 2 * rect.width + rect.x, sy = (1 - v.y) / 2 * rect.height + rect.y;
+          const d = Math.hypot(sx - cx, sy - cy);
+          if (d < bd){ bd = d; bi = i; }
+        }
+        best = bi;
       }
       return best;
     };
@@ -375,7 +392,8 @@ window.Body3D = {
         const moved = Math.hypot(e.clientX - downPos[0], e.clientY - downPos[1]);
         if (moved < 7 && pointers.size === 1){
           const hit = pickAt(e.clientX, e.clientY);
-          if (hit >= 0){ window.__lastSelect = inst.parts[hit].name; inst.onSelect(inst.parts[hit], hit); } else { window.__lastSelect = null; }
+          (window.__clicks = window.__clicks || []).unshift({ cx: e.clientX, cy: e.clientY, hit, name: hit >= 0 ? inst.parts[hit].name : null });
+          if (hit >= 0){ window.__lastSelect = inst.parts[hit].name; inst.onSelect(inst.parts[hit], hit); if (opts.onSelect) opts._userSelected = true; } else { window.__lastSelect = null; }
         }
       }
       pointers.delete(e.pointerId);
