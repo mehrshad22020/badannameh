@@ -3,9 +3,9 @@
    آتلاس واقعی BodyParts3D + کنترلر دوربین دست‌ساز
    (چرخش/زوم/پن/پینچ بدون وابستگی — همیشه پاسخ‌گو)
 ============================================================ */
-import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import * as THREE from './vendor/three.module.js';
+import { RoomEnvironment } from './vendor/addons/environments/RoomEnvironment.js';
+import { mergeGeometries } from './vendor/addons/utils/BufferGeometryUtils.js';
 
 const SYS_COLORS = {
   skeletal:'#8fa3bd', muscular:'#d95f57', arterial:'#c74040', venous:'#4a74d8',
