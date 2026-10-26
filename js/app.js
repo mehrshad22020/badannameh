@@ -590,7 +590,6 @@ function pageHome(){
       <a class="btn" href="#/body">کاوش سه‌بعدی بدن</a>
       <a class="btn ghost" href="#/brain">کاوشگر مغز</a>
     </div>
-    <span class="dedication">تقدیم به <b>گلسا</b> 🌷</span>
           <div class="stats">
             <div class="stat"><b>۲۲۳۴</b><span>مش سه‌بعدی واقعی</span></div>
             <div class="stat"><b>${fa(SYSTEMS.length)}</b><span>دستگاه بدن</span></div>
