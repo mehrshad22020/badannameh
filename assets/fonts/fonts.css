@@ -1,0 +1,22 @@
+/* فونت‌های بدن‌نامه — سلف‌هاست (بدون CDN؛ برای ایران) */
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("Vazirmatn-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lalezar";
+  src: url("Lalezar-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("SpaceGrotesk-Variable.ttf") format("truetype");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
