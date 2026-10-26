@@ -932,8 +932,7 @@ function pageBrain(){
     </div>
     <div class="brain-hint">💡 ساختار مغز را از فهرست انتخاب کن یا روی مدل کلیک کن؛ با «جداسازی» بقیه کم می‌شوند و دوربین روی همان بخش زوم می‌کند — دقیقاً مثل برداشتن آن از مغز واقعی.</div>
     <div id="brain-3d-wrap">
-      <div style="display:grid;grid-template-columns:1fr 350px;gap:18px;align-items:start" class="body3d-layout">
-        <div class="stage3d stage-xl" id="b3d-stage"></div>
+      <div class="body3d-layout">
         <aside class="brain-side" style="position:sticky;top:calc(var(--topbar-h) + 14px)">
           ${BRAIN.groups.map(g => `
             <div class="bgroup"><h4>${g.name}</h4><div class="bparts">
@@ -946,6 +945,7 @@ function pageBrain(){
             <div class="small muted">یک ساختار انتخاب کن…</div>
           </div>
         </aside>
+        <div class="stage3d stage-xl" id="b3d-stage"></div>
       </div>
     </div>
     <div id="brain-2d-wrap" hidden>
