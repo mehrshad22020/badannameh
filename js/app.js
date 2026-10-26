@@ -243,7 +243,7 @@ function build3DStage(host, { brainOnly, onReset, systems, autoRotate } = {}){
       </div>
     </div>
     <div class="hud bottom">
-      <button class="hud-pill" id="hud-pan" title="با فعال‌سازی، کشیدن با دکمه چپ موس = جابه‌جایی صحنه">✥ جابه‌جایی</button>
+      <button class="hud-pill" id="hud-pan" title="کشیدن با دکمه چپ موس = جابه‌جایی صحنه (در حالت چیدمان خودکار فعال می‌شود)">✥ جابه‌جایی</button>
       <button class="hud-pill" id="hud-zout" title="کوچک‌نمایی">－</button>
       <button class="hud-pill" id="hud-zin" title="بزرگ‌نمایی">＋</button>
       <button class="hud-pill" id="hud-isolate">جداسازی انتخاب‌شده</button>
@@ -346,11 +346,18 @@ function build3DStage(host, { brainOnly, onReset, systems, autoRotate } = {}){
       if (opts3D.onReady) opts3D.onReady(inst);
       /* همگام‌سازی همزمان دکمه‌ها با وضعیت واقعی صحنه */
       const isoBtn = $('#hud-isolate', host), sl = $('#hud-explode', host), arrBtn = $('#hud-arrange', host);
+      const panBtn = $('#hud-pan', host), noteEl = $('.hud-note', host);
+      const NOTE_ARR = 'کشیدن موس = جابه‌جایی در چیدمان · چرخ موس = زوم به سمت موس · دوبارکلیک روی هر قطعه = نزدیک شدن';
+      const NOTE_DEF = 'کلیک = انتخاب · کشیدن = چرخش · راست‌کلیک-کشیدن = جابه‌جایی · چرخ موس = زوم';
       inst.onStateChange = () => {
         const on = !!active3D && active3D.isolate;
+        const arr = !!active3D && active3D.isArrange();
+        const pan = !!active3D && active3D.isPan();
         if (isoBtn) isoBtn.classList.toggle('on', on);
-        if (sl) sl.disabled = on || (!!active3D && active3D.isArrange());
-        if (arrBtn) arrBtn.classList.toggle('on', !!active3D && active3D.isArrange());
+        if (arrBtn) arrBtn.classList.toggle('on', arr);
+        if (panBtn) panBtn.classList.toggle('on', pan);
+        if (sl) sl.disabled = on || arr;
+        if (noteEl) noteEl.textContent = arr ? NOTE_ARR : NOTE_DEF;
       };
       inst.onStateChange();
     }).catch(e => {

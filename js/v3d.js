@@ -214,15 +214,57 @@ window.Body3D = {
       const up = new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion);
       const k = ctl.radius * .0011;
       ctl.target.addScaledVector(right, -dx * k).addScaledVector(up, dy * k);
+      clampTarget();
+      ctlApply();
+    };
+    /* fly smooth camera */
+    let ctlGoal = null;
+    const flyTo = g => {
+      ctlGoal = {
+        target: g.target ? g.target.clone() : null,
+        radius: ('radius' in g) ? g.radius : null,
+        theta: ('theta' in g) ? g.theta : null,
+        phi: ('phi' in g) ? g.phi : null
+      };
+      dirty = true;
+    };
+    const clearGoal = () => { ctlGoal = null; };
+    /* clamp target - user never gets lost */
+    const clampTarget = () => {
+      const grid = inst._arrange && inst._grid;
+      const w = grid ? inst._grid.width / 2 + .9 : 2.6;
+      const h = grid ? inst._grid.height / 2 + .9 : 2.6;
+      ctl.target.x = THREE.MathUtils.clamp(ctl.target.x, -w, w);
+      ctl.target.y = THREE.MathUtils.clamp(ctl.target.y, Math.max(.1, .85 - h), .85 + h);
+      ctl.target.z = THREE.MathUtils.clamp(ctl.target.z, -2.6, 2.6);
+    };
+    /* zoom toward mouse - like a map */
+    const zoomAt = (cx, cy, factor) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.set((cx - rect.left) / rect.width * 2 - 1, -((cy - rect.top) / rect.height * 2 - 1));
+      raycaster.setFromCamera(pointer, camera);
+      const planeNormal = new THREE.Vector3().subVectors(camera.position, ctl.target).normalize();
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(planeNormal, ctl.target);
+      const hit = new THREE.Vector3();
+      const oldR = ctl.radius;
+      const newR = Math.max(ctl.min, Math.min(ctl.max, oldR * factor));
+      if (raycaster.ray.intersectPlane(plane, hit)){
+        const f = newR / oldR;
+        ctl.target.copy(hit).add(new THREE.Vector3().subVectors(ctl.target, hit).multiplyScalar(f));
+        clampTarget();
+      }
+      ctl.radius = newR;
+      clearGoal();
       ctlApply();
     };
     const VIEWS = { front:{t:0,p:1.47}, side:{t:Math.PI/2,p:1.47}, back:{t:Math.PI,p:1.47}, persp:{t:.5,p:1.42} };
     const fitView = view => {
       const v = VIEWS[view] || VIEWS.front;
-      ctl.target.set(0, .85, 0);
-      ctl.theta = v.t; ctl.phi = v.p;
-      ctl.radius = host.clientWidth < 768 ? 4.7 : 3.9;
-      ctlApply();
+      flyTo({
+        target: new THREE.Vector3(0, .85, 0),
+        radius: host.clientWidth < 768 ? 4.7 : 3.9,
+        theta: v.t, phi: v.p
+      });
     };
     const fitToSelection = () => {
       const box = new THREE.Box3();
@@ -232,18 +274,16 @@ window.Body3D = {
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z);
-      ctl.target.copy(center);
-      ctl.radius = Math.max(.5, (maxDim / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.45);
-      ctlApply();
+      flyTo({ target: center, radius: Math.max(.5, (maxDim / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.45) });
     };
     const fitArrange = () => {
       if (!inst._grid) return;
       const size = Math.max(inst._grid.width, inst._grid.height);
-      ctl.target.set(0, .9, 0);
-      ctl.theta = 0; ctl.phi = 1.45;
-      ctl.radius = Math.max(1.2, (size / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.45);
-      ctl.max = Math.max(90, ctl.radius * 2);
-      ctlApply();
+      const fullDist = (size / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.15;
+      ctl.max = Math.max(90, fullDist * 2);
+      /* تعداد زیاد: از نزدیک شروع کن — کاربر با پن/زوم مثل نقشه می‌گردد */
+      const dist = inst._grid.count <= 60 ? fullDist : Math.max(2.4, Math.min(fullDist, inst._grid.cell * 14));
+      flyTo({ target: new THREE.Vector3(0, .9, 0), radius: dist, theta: 0, phi: 1.45 });
     };
 
     /* ---------- وضعیت ---------- */
@@ -380,12 +420,14 @@ window.Body3D = {
         const dx = e.clientX - p.x, dy = e.clientY - p.y;
         p.x = e.clientX; p.y = e.clientY;
         if (pointers.size === 1){
+          clearGoal();
           if (inst._pan || e.buttons === 2){ panBy(dx, dy); }
           else { ctl.theta -= dx * .0055; ctl.phi -= dy * .0055; ctlApply(); }
         } else if (pointers.size === 2){
+          clearGoal();
           const a = [...pointers.values()];
           const d = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
-          if (pinchD > 0){ ctl.radius = Math.max(ctl.min, Math.min(ctl.max, ctl.radius * pinchD / d)); ctlApply(); }
+          if (pinchD > 0){ zoomAt((a[0].x + a[1].x) / 2, (a[0].y + a[1].y) / 2, pinchD / d); }
           pinchD = d;
         }
       }
@@ -408,8 +450,8 @@ window.Body3D = {
     canvas.addEventListener('pointerleave', () => { hoverTip.classList.remove('show'); });
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
-      ctl.radius = Math.max(ctl.min, Math.min(ctl.max, ctl.radius * Math.pow(1.0013, e.deltaY)));
-      ctlApply();
+      clearGoal();
+      zoomAt(e.clientX, e.clientY, Math.pow(1.0013, e.deltaY));
     }, { passive:false });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     canvas.addEventListener('dblclick', e => {
@@ -450,6 +492,20 @@ window.Body3D = {
       const arrTarget = inst._arrange ? 1 : 0;
       if (Math.abs(arr - arrTarget) > .001){ arr = THREE.MathUtils.damp(arr, arrTarget, 4, dt); dirty = true; }
       if (ctl.autoRotate && !pointers.size){ ctl.theta -= dt * .35; dirty = true; }
+      if (ctlGoal){
+        const k = 1 - Math.exp(-7 * dt);
+        if (ctlGoal.target) ctl.target.lerp(ctlGoal.target, k);
+        if (ctlGoal.radius != null) ctl.radius = THREE.MathUtils.damp(ctl.radius, ctlGoal.radius, 7, dt);
+        if (ctlGoal.theta != null) ctl.theta = THREE.MathUtils.damp(ctl.theta, ctlGoal.theta, 7, dt);
+        if (ctlGoal.phi != null) ctl.phi = THREE.MathUtils.damp(ctl.phi, ctlGoal.phi, 7, dt);
+        const done = (!ctlGoal.target || ctl.target.distanceTo(ctlGoal.target) < .003)
+          && (ctlGoal.radius == null || Math.abs(ctl.radius - ctlGoal.radius) < .003)
+          && (ctlGoal.theta == null || Math.abs(ctl.theta - ctlGoal.theta) < .003)
+          && (ctlGoal.phi == null || Math.abs(ctl.phi - ctlGoal.phi) < .003);
+        if (done) ctlGoal = null;
+        dirty = true;
+      }
+      clampTarget();
       ctlApply();
       applyState();
       if (pendingMove){ doHover(pendingMove); pendingMove = null; }
@@ -536,21 +592,21 @@ window.Body3D = {
         const gy = .9 + ((rows - 1) / 2 - row) * cell;
         map.set(pi, new THREE.Vector3(gx - centers[pi].x, gy - centers[pi].y, -centers[pi].z));
       });
-      inst._grid = { map, width: cols * cell, height: rows * cell };
+      inst._grid = { map, width: cols * cell, height: rows * cell, cell, count: vis.length };
     };
     inst.setArrange = on => {
       inst._arrange = !!on;
       computeArrange();
+      /* dar chideman, keshidan = jelbe-jayi */
+      inst._pan = on;
       lastKey = '';
-      if (on && inst._grid) fitArrange(); else fitView(inst._view);
+      if (on && inst._grid) fitArrange(); else { inst._pan = false; fitView(inst._view); }
       applyState();
+      if (inst.onStateChange) inst.onStateChange();
     };
+    inst.isPan = () => !!inst._pan;
     inst.focusBrain = () => {
-      ctl.target.set(0, 1.5, 0);
-      ctl.theta = Math.PI / 2;
-      ctl.phi = 1.45;
-      ctl.radius = 1.7;
-      ctlApply();
+      flyTo({ target: new THREE.Vector3(0, 1.5, 0), radius: 1.7, theta: Math.PI / 2, phi: 1.45 });
     };
     inst.isArrange = () => !!inst._arrange;
     inst.setMarkers = on => { markers.visible = !!on; dirty = true; };
